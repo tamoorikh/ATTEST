@@ -19,6 +19,7 @@ import {
   ChevronRight,
   FolderOpen,
   ArrowUpRight,
+  Share2,
 } from "lucide-react";
 import { DemoBanner } from "@/components/common/DemoBanner";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
@@ -56,6 +57,7 @@ const navGroups: NavGroup[] = [
     items: [
       { label: "Exceptions", href: "/portal/exceptions", icon: AlertOctagon, badge: 2 },
       { label: "Trust Certificate", href: "/portal/certificate", icon: Award },
+      { label: "Evidence Sharing", href: "/portal/sharing", icon: Share2 },
     ],
   },
   {

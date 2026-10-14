@@ -20,10 +20,12 @@ model User {
   exceptionComments  ExceptionComment[]
   exceptionEvidence  ExceptionEvidence[]
   reviewNotes        ReviewNote[]
-  certificatesSigned Certificate[]
-  notifications      Notification[]
-  auditEvents        AuditEvent[]
-  resolvedExceptions Exception[]         @relation("ExceptionResolvedBy")
+  certificatesSigned   Certificate[]       @relation("CertificateSignedBy")
+  certificatesRevoked  Certificate[]       @relation("CertificateRevokedBy")
+  decidedDisclosures   DisclosureRequest[] @relation("DisclosureDecidedBy")
+  notifications        Notification[]
+  auditEvents          AuditEvent[]
+  resolvedExceptions   Exception[]         @relation("ExceptionResolvedBy")
 }
 
 model Organization {
@@ -327,51 +329,77 @@ model ProcessingRun {
 }
 
 model Certificate {
-  id                 String              @id @default(cuid())
-  orgId              String
-  publicId           String              @unique
-  level              String              // STANDARD_ASSURANCE, COMPREHENSIVE
-  periodStart        DateTime
-  periodEnd          DateTime
-  status             String              @default("DRAFT") // DRAFT, PENDING_REVIEW, ISSUED, SUPERSEDED, REVOKED
-  scopeJson          String              // JSON string
-  coverageJson       String              // JSON string
-  signedById         String?
-  payloadHash        String?
-  signature          String?
-  signatureMode      String?             // DEVELOPMENT_MODE, QUALIFIED
-  issuedAt           DateTime?
-  version            Int                 @default(1)
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
+  id                    String              @id @default(cuid())
+  orgId                 String
+  publicId              String              @unique
+  level                 String              // LEVEL_1, LEVEL_2, LEVEL_3, STANDARD_ASSURANCE, COMPREHENSIVE
+  periodStart           DateTime
+  periodEnd             DateTime
+  status                String              @default("DRAFT") // DRAFT, PENDING_REVIEW, ISSUED, SUPERSEDED, REVOKED
+  scopeJson             String?             // JSON string
+  coverageJson          String?             // JSON string
+  signedById            String?
+  payloadHash           String?
+  signature             String?
+  signatureMode         String?             @default("DEVELOPMENT") // DEVELOPMENT, QUALIFIED
+  canonicalPayload      String?             // Canonical JSON payload used for hashing and signing
+  caConclusion          String?             // Professional conclusion note (min 50 chars)
+  disclosedLimitations String?             // JSON array of disclosed limitations
+  levelAchieved         Int                 @default(1)
+  coveragePercent       Int                 @default(0)
+  proceduresJson        String?             // JSON array of procedures performed
+  supersededById        String?
+  revokedAt             DateTime?
+  revocationReason      String?
+  revokedById           String?
+  issuedAt              DateTime?
+  version               Int                 @default(1)
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
 
-  org                Organization        @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  signedBy           User?               @relation(fields: [signedById], references: [id], onDelete: SetNull)
-  disclosureRequests DisclosureRequest[]
+  org                   Organization        @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  signedBy              User?               @relation("CertificateSignedBy", fields: [signedById], references: [id], onDelete: SetNull)
+  revokedBy             User?               @relation("CertificateRevokedBy", fields: [revokedById], references: [id], onDelete: SetNull)
+  supersededBy          Certificate?        @relation("CertificateSupersession", fields: [supersededById], references: [id], onDelete: SetNull)
+  supersedes            Certificate[]       @relation("CertificateSupersession")
+  disclosureRequests    DisclosureRequest[]
 
   @@index([orgId])
   @@index([publicId])
   @@index([signedById])
+  @@index([supersededById])
 }
 
 model DisclosureRequest {
-  id             String       @id @default(cuid())
-  orgId          String
-  certificateId  String
-  requesterEmail String
-  requesterName  String
-  purpose        String
-  status         String       @default("PENDING") // PENDING, APPROVED, REJECTED
-  accessKey      String?
-  expiresAt      DateTime?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  id                     String       @id @default(cuid())
+  orgId                  String
+  certificateId          String
+  requesterEmail         String
+  requesterName          String
+  requesterOrg           String?
+  purpose                String
+  period                 String       @default("2026-04")
+  categoriesJson         String       @default("[\"BANK_STATEMENT\"]") // JSON array of requested categories
+  approvedCategoriesJson String?      // JSON array of approved categories
+  status                 String       @default("PENDING") // PENDING, APPROVED, REJECTED
+  accessKey              String?
+  downloadToken          String?      @unique
+  downloadTokenExpiresAt DateTime?
+  downloadCount          Int          @default(0)
+  decidedAt              DateTime?
+  decidedById            String?
+  rejectionReason        String?
+  expiresAt              DateTime?
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
 
-  org            Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  certificate    Certificate  @relation(fields: [certificateId], references: [id], onDelete: Cascade)
+  org                    Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  certificate            Certificate  @relation(fields: [certificateId], references: [id], onDelete: Cascade)
+  decidedBy              User?        @relation("DisclosureDecidedBy", fields: [decidedById], references: [id], onDelete: SetNull)
 
   @@index([orgId])
   @@index([certificateId])
+  @@index([downloadToken])
 }
 
 model Notification {

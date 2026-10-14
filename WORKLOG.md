@@ -604,6 +604,132 @@ This phase makes Attest's core promise real: **clients resolve, professionals ju
 - `npm test`: 7 test suites passed, 42 tests passed (100%).
 - `npm run build`: 26 routes successfully compiled and optimized.
 
+---
+
+## Phase: P4: Certificate Sign-Off, Issuance & Public Verifier
+**Date**: October 14, 2026  
+**Status**: COMPLETE ✅  
+**Commit Message**: `P4: certificates`
+
+---
+
+### 1. Architectural Summary & Scope
+Phase 4 introduces the network moment of Attest: a cryptographically signed trust certificate issued by a licensed Chartered Accountant that any stranger can verify publicly without creating an account or logging in.
+
+#### A. Housekeeping First
+- Removed placeholder certificate `CERT-2026-04-MTL-001` from `prisma/seed.ts`.
+- All demonstration and production certificates now issue exclusively through the real, server-enforced pre-issuance pipeline. Exactly one issuance path exists in the codebase.
+
+---
+
+### 2. What Works (Fully Functional & Verified)
+
+#### A. Pre-Issuance Sign-Off Gates (`/ca/sign-off`)
+- Built server-enforced pre-issuance checklist evaluating 5 mandatory gates for the engagement (client + period):
+  1. **Gate 1: Source Period Statements Present**: Verifies uploaded/parsed source statements for the period.
+  2. **Gate 2: Validation Rules R1–R4 Passed**: Verifies running balance arithmetic continuity and that any discrepancy has a resolved exception.
+  3. **Gate 3: Zero Open High/Critical Exceptions**: Strictly blocks issuance if any `HIGH` or `CRITICAL` exception remains `OPEN`, `CLIENT_SUBMITTED`, or `MORE_INFO_REQUESTED`. Non-material items (`LOW`, `MEDIUM`, `WAIVED`) are surfaced under Disclosed Limitations with both client and CA treatments.
+  4. **Gate 4: CA Professional Conclusion Note**: Requires free-text conclusion of at least 50 characters with live character counter.
+  5. **Gate 5: Verification Level Computed Honestly**: Evaluates level achieved (Level 1, 2, or 3) and coverage % from engine run records without inflated claims.
+- The "Review & Apply Digital Signature" button stays strictly disabled while any gate fails.
+
+#### B. Deliberate Two-Step Issuance Flow
+- Clicking the sign-off button opens an explicit modal displaying:
+  - Organization legal details, tax ID, registration number.
+  - Computed assurance level and coverage percentage.
+  - Procedures executed under deterministic engine.
+  - Disclosed limitations summary.
+  - Licensed CA signatory details (Ayesha Siddiqui, FCA • License #ICAP-49102).
+  - Exact statutory scope language from `ATTEST.md`:
+    *"procedures and results — not opinions; not a statutory audit; no creditworthiness representation"*.
+  - Mandatory classification notice: *"development-mode integrity — not a qualified digital signature"*.
+  - Explicit confirmation checkbox required before signing.
+- **Cryptographic Signature Engine (`src/lib/certificate.ts`)**:
+  - `publicId` format: `ATTEST-PK-2026-XXXXXX-CK` (unpredictable 6-digit number + 2-character check suffix).
+  - Canonical JSON payload with recursive key sorting.
+  - SHA-256 canonical `payloadHash`.
+  - HMAC-SHA256 signature using `SIGNING_KEY` environment variable.
+  - `signatureMode = DEVELOPMENT`.
+- **Versioning & Supersession**: Re-issuing for the same org + period automatically marks the prior certificate `SUPERSEDED`, links `supersededById`, and points public viewers to the successor certificate.
+- **Revocation**: CA can revoke any active certificate with a mandatory reason of &ge; 20 characters. Status immediately transitions to `REVOKED`, logs an immutable `AuditEvent`, notifies the client, and reflects publicly in real time. Nothing is ever deleted.
+
+#### C. Certificate Rendering
+- **Client Portal (`/portal/certificate`)**:
+  - Status card with public ID and version.
+  - Copy Public URL button with instant visual feedback.
+  - "Download PDF" (opens print-optimized view).
+  - "Download JSON" (downloads documented schema with id, org, level, period, scope, coverage, limitations, signatory, issuedAt, payloadHash, signature, signatureMode, verifyUrl).
+  - Honest Level 2 representation: clearly states Bank & General Ledger reconciled; external invoices not three-way tested.
+- **Print View (`/portal/certificate/print`)**:
+  - Professional typographic layout with `@page` margins, QR verify block, and cryptographic hashes.
+
+#### D. Public Verifier (`/verify` and `/verify/[id]`) — Zero Login
+- **Landing Search Page (`/verify`)**:
+  - Search box for certificate IDs.
+  - Plain-language explanation of what verification does and does not establish.
+  - Strict privacy notice.
+- **Lookup View (`/verify/[id]`)**:
+  - Unauthenticated access with rate limiting (10 requests/min/IP with 429 response).
+  - Real-time cryptographic signature verification:
+    - `VALID & CURRENT`: Verified green badge and signature check passed.
+    - `VALID BUT SUPERSEDED`: Amber badge with link to successor certificate.
+    - `REVOKED`: Crimson badge showing revocation category and date.
+    - `NOT FOUND`: Generic 404 response identical for malformed and non-existent IDs.
+    - `SIGNATURE INVALID`: Alerts on tampered payloads or signature corruption.
+  - **Strict Privacy Shield**: Displays strictly public attestation metadata (org name, cert ID, issuing firm, signatory, level, period, issue date, status, coverage %, scope, limitations, verification timestamp, integrity result). NEVER displays transaction descriptions, counterparty names, individual amounts, or internal ledgers.
+
+#### E. Evidence Pack Request (Consent Charter)
+- Public verify view includes "Request Supporting Evidence" form (requester name, org, email, purpose, categories, period).
+- Submitting creates a `DisclosureRequest` and generates an in-app notification for client owners linking to `/portal/sharing`.
+- **Client Evidence Sharing Desk (`/portal/sharing`)**:
+  - Client reviews incoming requests, stated purpose, and requested categories.
+  - Client approves or rejects.
+  - On approval, generates a scoped package containing ONLY documents matching approved categories and period, plus a SHA-256 integrity manifest.
+  - Served via signed, expiring download link valid for exactly 7 days (`/api/disclosures/download?token=...`).
+  - Full audit trail: `DISCLOSURE_REQUESTED`, `DISCLOSURE_APPROVED` / `DISCLOSURE_REJECTED`, `DISCLOSURE_LINK_GENERATED`, `DISCLOSURE_LINK_ACCESSED`, `DISCLOSURE_LINK_EXPIRED`.
+
+---
+
+### 3. Acceptance Verification & Proof
+
+1. **Full Vitest Suite Execution (`npm test`)**:
+   - **52 passed (52/52 tests green across all 8 test files)**:
+     - `tests/certificate-verifier.test.ts` (10 new Phase 4 tests):
+       1. Gate enforcement: blocks issuance with open HIGH exception, then proceeds after resolution.
+       2. Cryptographic engine: correctly signs canonical payload and verifies valid signature.
+       3. Cryptographic engine: rejects tampered canonical payload as `SIGNATURE INVALID`.
+       4. Certificate lifecycle: revocation is recorded with mandatory reason and reflects status.
+       5. Versioning: re-issuing marks prior certificate `SUPERSEDED` and links successor.
+       6. Public verifier: unknown or malformed public ID returns generic not found.
+       7. Security: rate limiter allows 10 requests and trips on 11th request.
+       8. Privacy Shield: public certificate projection strictly excludes transactions, counterparties, and balances.
+       9. Consent Charter: evidence pack download includes only approved document categories.
+       10. Consent Charter: download request with expired token is rejected.
+     - All 42 prior test cases in `money`, `audit`, `tenant-isolation`, `auth-smoke`, `engine`, `resolution-review`, and `ingestion` remain 100% green.
+2. **Production Build (`npm run build`)**:
+   - Successfully compiled all 33 static and dynamic routes with zero TypeScript or bundling errors.
+3. **Automated E2E Screenshots & The Stranger Test**:
+   - Captured 7 headless browser artifacts via `scripts/e2e-phase4.ts`:
+     - `01_p4_blocked_signoff_gates.png`: Gate 3 blocked by open HIGH exception with disabled sign-off button.
+     - `02_p4_confirmation_modal.png`: Deliberate confirmation modal showing scope, level, coverage, procedures, limitations, and signatory.
+     - `03_p4_certificate_print_view.png`: Print view with A4 layout, QR verify block, and payload hashes.
+     - `04_p4_public_verify_valid.png`: Public verifier showing `VALID & CURRENT` badge, cryptographic integrity verified, and evidence request form.
+     - `05_p4_public_verify_revoked.png`: Public verifier showing `REVOKED` status badge and CA revocation reason.
+     - `06_p4_public_verify_not_found.png`: Generic "Certificate Not Found" public view.
+     - `07_p4_stranger_test_incognito.png`: The "Stranger Test" conducted in a fully logged-out fresh incognito context verifying certificate `ATTEST-PK-2026-406434-0A`.
+
+---
+
+### 4. What is Blocked / Deferred
+- **None**: All dependencies, cryptographic operations, gate rules, verifier routes, tests, and build checks execute cleanly. Phase 5 is intentionally NOT started.
+
+---
+
+### 5. Verification Test & Build Log
+- `npm test`: 8 test suites passed, 52 tests passed (100%).
+- `npm run build`: 33 routes successfully compiled and optimized.
+
+
 
 
 

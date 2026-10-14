@@ -480,33 +480,7 @@ async function main() {
     },
   });
 
-  // 10. Sample Certificate in PENDING_REVIEW state
-  const certPublicId = "CERT-2026-04-MTL-001";
-  await prisma.certificate.create({
-    data: {
-      orgId: demoOrg.id,
-      publicId: certPublicId,
-      level: "STANDARD_ASSURANCE",
-      periodStart: new Date("2026-04-01T00:00:00Z"),
-      periodEnd: new Date("2026-04-30T23:59:59Z"),
-      status: "PENDING_REVIEW",
-      scopeJson: JSON.stringify({
-        bankAccountsIncluded: ["Habib Bank Limited (HBL) - 00427901842003"],
-        period: "April 2026",
-        accountingStandard: "IFRS for SMEs (Pakistan)",
-        reconciliationTier: "Bank-to-Book Level 2",
-      }),
-      coverageJson: JSON.stringify({
-        reconciledVolumePaise: 247500000,
-        exceptionVolumePaise: 45850000,
-        exceptionCount: 2,
-        resolvedExceptions: 0,
-      }),
-      version: 1,
-    },
-  });
-
-  // 11. Cryptographic AuditEvent Hash Chain Initialization
+  // 10. Cryptographic AuditEvent Hash Chain Initialization
   const auditEvents = [
     {
       action: "ORGANIZATION_INITIALIZED",
