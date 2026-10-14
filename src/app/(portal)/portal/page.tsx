@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { formatPaise } from "@/lib/money";
+import { VerificationTrigger } from "./verification-trigger";
 
 export default async function PortalDashboardPage() {
   // Retrieve demo organization details and metrics
@@ -79,6 +80,9 @@ export default async function PortalDashboardPage() {
           </Link>
         </div>
       </div>
+
+      {/* Verification Trigger Banner */}
+      <VerificationTrigger />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

@@ -270,3 +270,114 @@ TEST 5: Category Override with Mandatory Justification & Audit Event
   - `tests/ingestion.test.ts` (5 tests)
 - `npm run build`: 23 routes successfully compiled and optimized.
 
+---
+
+## Phase: P2: The Reconciliation Engine
+**Date**: October 14, 2026  
+**Status**: COMPLETE ✅  
+**Commit Message**: `P2: engine`
+
+---
+
+### 1. Architectural Summary & Engine Core IP
+- **Pure Deterministic Framework-Free Engine** (`src/engine/`):
+  - Completely decoupled from Next.js, HTTP, and database frameworks for pure unit testing and mathematical reproducibility.
+  - Same input always produces the identical deterministic output.
+  - Zero AI dependency: absolutely no imports of `@google/generative-ai`, `openai`, `@anthropic-ai`, or network HTTP packages.
+
+---
+
+### 2. What Works (Fully Functional & Verified)
+
+#### A. Deterministic Rule-Based Classifier (`src/engine/classifier.ts`)
+- Keyword pattern matching covering 13 operational and accounting categories:
+  - `payroll` (high confidence)
+  - `supplier-payment` (medium confidence)
+  - `tax-payment` (high confidence)
+  - `rent-utilities` (high confidence)
+  - `loan-proceeds` & `loan-repayment`
+  - `inter-account-transfer`
+  - `refund` & `interest`
+  - `cash-withdrawal`
+  - `personal-mixing-indicator` (medium confidence)
+  - `unexplained` (low confidence fallback)
+- **Constitutional Hard Rule**:
+  - Never labels a bank credit "customer-receipt" as a confirmed fact without corroborated sales/invoice matching.
+  - Always assigns `"revenue-like credit (inferred)"` until verified against sales records.
+
+#### B. Explainable Multi-Pass Matcher (`src/engine/matcher.ts`)
+- Configurable matching engine (`amountTolerancePaise: 0`, `dateWindowDays: 3`, `counterpartySimilarityThreshold: 0.75`, `referenceContains: true`).
+- **1:1 Exact Matching**: Combines exact minor units, calendar date windows, and normalized Levenshtein/token string similarity. Stores granular explanation (e.g., `"amount_exact + date_window + counterparty_1.00"`).
+- **1:Many Split Payments**: Identifies single bank credits/debits matching combinations of ledger entries (e.g., 12,000,000 paisa matching 7,000,000 + 5,000,000).
+- **Partial Payments**: Detects installments (e.g., ledger 12,000,000 vs bank 8,000,000); flags candidate as `PARTIAL` without auto-resolving.
+- **Ambiguity Gray Band**: Transactions with matching amounts but sub-threshold counterparty similarity (e.g., 0.40) or competing candidates are marked `AMBIGUOUS` for human review.
+- **Multi-Currency Safety**: Cross-currency matching (e.g., USD vs PKR) is strictly prohibited and throws an explicit error rather than silently summing.
+
+#### C. Level 3 Three-Way Corroborator (`src/engine/threeWay.ts`)
+- Traces: `Bank Credit` ↔ `General Ledger Sales Entry` ↔ `FBR/Sales Invoice`.
+- Reconciles by invoice number references, dates, and amounts.
+- Enforces Level 3 standard: *"Do not award three-way matches on amount alone."*
+- Flags `THREE_WAY_MATCHED`, `MISSING_INVOICE`, and `UNRECORDED_CREDIT`.
+
+#### D. Explainable Exception Generator (`src/engine/exceptions.ts`)
+- Generates structured exceptions with plain-language title, "what happened" (`explanation`), "why it matters", suggested resolution, and required evidence:
+  - `DUPLICATE_PAYMENT` (E-101 shape): Identifies duplicate disbursements lacking second invoice.
+  - `UNRECORDED_CREDIT` (E-102 shape): Identifies receipts lacking ledger booking.
+  - `PAYMENT_WITHOUT_INVOICE`: Ledger disbursements lacking vendor invoice documentation.
+  - `LEDGER_WITHOUT_BANK`: Book entries lacking clearing bank credits/debits.
+  - `POSSIBLE_DIRECTOR_LOAN`: Corporate financing from shareholder/director accounts.
+  - `PERSONAL_MIXING_SUSPECTED`: Low-severity heuristic flags for personal/household expenditures.
+- Severity weighting (`CRITICAL`, `HIGH`, `MEDIUM`, `LOW`) dynamically computed based on materiality (5,000,000 paisa / PKR 50,000 threshold).
+
+#### E. Idempotent Run Orchestrator & Diff Tracker (`src/engine/orchestrator.ts`)
+- Connects pure engine to database records and persists results into `ProcessingRun.statsJson`.
+- **Idempotent Execution**: Repeated runs on identical data create 0 duplicate exceptions and report `"Reconciliation state unchanged since last run (idempotent pass)."`.
+- **Rerun Diffing**: Automatically compares against `previousRun.statsJson` to report exact counts of resolved and new exceptions (e.g., `"1 exception(s) resolved since last run; 1 new exception(s) created."`).
+- **Audit Logging**: Appends cryptographic `AuditEvent` chaining every reconciliation execution.
+
+#### F. Tiered Verification Levels
+- Computes `levelEligible` and `levelAchieved` (Levels 1, 2, 3) with plain-language explanations and actionable next steps.
+- Embedded into the Client Portal dashboard via interactive `<VerificationTrigger />` component.
+
+---
+
+### 3. Acceptance Verification (Specs T1 - T17)
+All 17 required acceptance specifications implemented and verified green in `tests/engine.test.ts`:
+- **T1**: Balance validation pass (existing seed figures, 0 tolerance).
+- **T2**: Corrupted statement fails R1 and creates exception (PKR 136,500.00 discrepancy).
+- **T3**: Running-balance break detected.
+- **T4**: Duplicate transaction detection on same date/description.
+- **T5**: Exact 1:1 match with full rule explanation stored (`amount_exact + date_window + counterparty_1.00`).
+- **T6**: Date-window match passes within 3 days, fails outside window.
+- **T7**: Split payment 1:many (12,000,000 matches 7,000,000 + 5,000,000).
+- **T8**: Partial payment (ledger 12,000,000 vs bank 8,000,000) flagged as `PARTIAL`.
+- **T9**: Ambiguous candidate (counterparty 0.4 similarity) marked `AMBIGUOUS`.
+- **T10**: Cross-currency transaction rejected with clear error.
+- **T11**: E-101 generated from seed (two Zubair debits, one invoice).
+- **T12**: E-102 generated from seed (12 Apr credit, no ledger entry).
+- **T13**: Three-way trace (03 Apr credit → ledger sales → FBR invoice traces to `THREE_WAY_MATCHED`).
+- **T14**: Classifier rules categorize payroll, tax, utilities; restricts unverified credit to `revenue-like credit (inferred)`.
+- **T15**: Idempotent rerun: running orchestrator twice yields identical exception counts.
+- **T16**: Rerun diff reports `"1 resolved"` after exception resolution.
+- **T17**: Engine purity: zero AI SDKs and zero network HTTP calls imported in engine core.
+
+---
+
+### 4. What is Partial / Deferred to Next Phases
+- **Automated Bookkeeping Reconciler (P2 Complete)**: Deterministic 2-way and 3-way matching engine is complete.
+- **CA Console Exception Resolution & Sign-Off Chamber (P3)**: Reviewer sign-off workflow, exception waiver protocol, and certificate minting (scheduled for Phase 3).
+- **Hardware Security Module (HSM) PKI Signing (P3)**: Qualified digital signatures for production deployment.
+
+---
+
+### 5. Verification Test & Build Log
+- `npm test`: 6 test suites passed, 32 tests passed (100%).
+  - `tests/money.test.ts` (4 tests)
+  - `tests/audit.test.ts` (2 tests)
+  - `tests/tenant-isolation.test.ts` (2 tests)
+  - `tests/auth-smoke.test.ts` (2 tests)
+  - `tests/ingestion.test.ts` (5 tests)
+  - `tests/engine.test.ts` (17 tests)
+- `npm run build`: 24 routes successfully compiled and optimized.
+
+
