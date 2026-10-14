@@ -79,9 +79,8 @@
 ---
 
 ### 3. What is Partial / Deferred to Next Phases
-- **File Parser Ingestion Pipeline (P1)**: Custom PDF/CSV parsing pipeline for user-uploaded bank statements (currently seeded via deterministic dataset).
-- **Rule Engine Execution Trigger (P1)**: Interactive web trigger to re-run reconciliation algorithms dynamically upon new file upload.
-- **Hardware Security Module (HSM) PKI Signing (P2)**: Qualified digital signatures for production deployment (currently development-mode SHA-256 hash signatures).
+- **Automated Bookkeeping Reconciler (P2)**: Multi-way matching engine linking bank transactions against ledger and invoices (P2).
+- **Hardware Security Module (HSM) PKI Signing (P3)**: Qualified digital signatures for production deployment (currently development-mode SHA-256 hash signatures).
 
 ---
 
@@ -94,3 +93,180 @@
 - `npm test`: 4 test suites passed, 10 tests passed (100%).
 - `npm run build`: 19 routes successfully compiled and optimized.
 - Dev server runtime: Automated script `scripts/exercise-dev-server.ts` validated all routes, redirects, and authenticated sessions.
+
+---
+
+## Phase: P1: Client Ingestion
+**Date**: October 14, 2026  
+**Status**: COMPLETE ✅  
+**Commit Message**: `P1: ingestion`
+
+---
+
+### 1. Phase 0 Review Corrections
+1. **Meridian Figures Rescaled 10x**:
+   - Opening Balance: PKR 800,000.00 (80,000,000 paisa)
+   - Payroll: PKR 486,200.00 (48,620,000 paisa)
+   - Export Credit: PKR 1,240,000.00 (124,000,000 paisa)
+   - Zubair Traders (x2 payments): PKR 118,500.00 each (11,850,000 paisa each)
+   - Fancy Fabrics: PKR 74,300.00 (7,430,000 paisa)
+   - 12 Apr Credit: PKR 340,000.00 (34,000,000 paisa)
+   - Utilities: PKR 42,000.00 (4,200,000 paisa)
+   - Marketplace Settlement: PKR 96,000.00 (9,600,000 paisa)
+   - Closing Balance: PKR 1,636,500.00 (163,650,000 paisa)
+   - Net Movement: ~PKR 17M monthly movement.
+   - Running balance arithmetic continuity verified: 100% pass (`balanceOk: true`).
+2. **Demo Persona Gating**:
+   - Added rule to `ATTEST.md`: *"Persona quick-login must be gated behind DEMO_MODE env flag; forbidden when DEMO_MODE is not 'true'."*
+   - Implemented gate in `src/app/auth/signin/page.tsx` rendering quick-login only when `NEXT_PUBLIC_DEMO_MODE === "true"`.
+
+---
+
+### 2. What Works (Fully Functional & Verified)
+
+#### A. Resumable Onboarding Wizard (`/portal/onboarding`)
+- 4-step wizard:
+  1. **Company Profile**: Legal Name, NTN, SECP Registration with mandatory badge: *"user-provided — not independently verified"*.
+  2. **Sources Declared**: Bank accounts, ERP/accounting system, sales register declarations.
+  3. **Authorizations & Consents**: Explicit legal checkboxes for third-party disclosure and statutory compliance.
+  4. **Readiness Summary**: Onboarding readiness score and submission handler.
+- Resumable: Stores `onboardingStep` in `CompanyProfile`; users resume where they left off. Writes `COMPANY_ONBOARDING_COMPLETED` audit event.
+
+#### B. Document Upload & Storage Workspace (`/portal/sources`)
+- Server-side validation: Accepts `.csv` and `.pdf`, enforces 25MB max size.
+- Cryptographic Deduping: Computes SHA-256 hash before disk/DB write; rejects duplicates with clear 409 error explaining audit trail protection.
+- Isolated Storage: Stores files under `./storage/[orgId]/[sha256]_[filename]`.
+- Permission-Checked Downloads: Access gated via `/api/documents/[id]/download`, verifying tenant membership before streaming bytes.
+
+#### C. Ingestion Parser Service
+- **CSV Parser (`src/lib/parser/csv.ts`)**: Auto-detects delimiters (`,`, `;`, `\t`, `|`), discovers header columns (Date, Description, Counterparty, Ref, Debit, Credit, Balance), parses ISO and Pakistani date formats (`DD/MM/YYYY`, `YYYY-MM-DD`), and parses minor units (paisa) without float representation.
+- **PDF Parser (`src/lib/parser/pdf.ts`)**: Uses `pdf-parse` class loader. When scanned or lacking structured table text, marks `parseStatus = "NEEDS_OCR"` with honest message: *"scanned PDF requires OCR — not available in MVP; upload the CSV from your bank."* ZERO fabricated rows.
+
+#### D. Deterministic Normalization & Validation Engine (`src/lib/validator/rules.ts`)
+- Normalizes rows into `BankTransaction` records with integer paisa amounts.
+- Persists validation metrics in `ProcessingRun.statsJson`:
+  - **R1 (Balance Reconciliation)**: `opening + credits - debits = closing` with strictly 0 paisa tolerance. On mismatch, generates `STATEMENT_BALANCE_MISMATCH` Critical Exception.
+  - **R2 (Running Balance Chaining)**: Verifies row-by-row arithmetic chain.
+  - **R3 (Duplicate Transaction Detection)**: Identifies identical debits/credits on same date with same description.
+  - **R4 (Consecutive Statement Continuity)**: Validates opening balance chains from prior period's closing balance.
+- Generates actionable exceptions with clear remediation suggestions.
+- Reruns append new `ProcessingRun` records, never overwriting historical runs.
+
+#### E. Transaction Explorer (`/portal/transactions`)
+- Server-side paginated explorer with search, period filters, and category filters.
+- Shows Date, Description, Counterparty, Debit, Credit, Balance, Category, Match Status, and validation tags.
+- Slide-over detail drawer displaying source document provenance, cryptographic SHA-256 hash, and arithmetic flags.
+- **Category Override Protocol**: Modifying a transaction category strictly requires a substantive reason (>= 5 chars); preserves `originalCategory`, records `overrideReason`, and writes an immutable `AuditEvent` to the cryptographic hash chain.
+
+---
+
+### 3. Acceptance Verification Outputs
+
+```
+================================================================================
+              ATTEST PLATFORM — PHASE 1 ACCEPTANCE VERIFICATION                 
+================================================================================
+
+[SETUP] Target Tenant: Meridian Textiles (Pvt) Ltd (cmv809fxs0002wdfc7hcaauf7)
+[SETUP] Authenticated Actor: Tariq Mahmood <demo@attest.pk>
+
+--------------------------------------------------------------------------------
+TEST 1: Upload Rescaled Meridian 8 Transactions CSV (10x Rescaled Figures)
+--------------------------------------------------------------------------------
+[1.1] CSV Parser Output:
+      Success: true
+      Rows Extracted: 8
+      Detected Delimiter: ","
+      Headers: [Date, Description, Counterparty, Reference, Debit, Credit, Balance]
+
+[1.2] Deterministic Rule Validation (R1-R4):
+      All Rules Passed: true
+      R1 (Statement Balance: Opening + Credits - Debits == Closing): PASS ✓
+      R2 (Running Balance Chaining): PASS ✓
+      R3 (Duplicate Transaction Detection): PASS ✓
+      R4 (Consecutive Statement Continuity): PASS ✓
+      Transactions Created: 8
+      Exceptions Created: 0
+
+[1.3] ProcessingRun Recorded:
+      Run ID: cmv80slis000jwd6ky54ugc32
+      Status: COMPLETED
+      Stats JSON Summary:
+        Opening Balance: PKR 800,000.00 (80000000 paisa)
+        Total Debits:    PKR 839,500.00 (83950000 paisa)
+        Total Credits:   PKR 1,676,000.00 (167600000 paisa)
+        Closing Balance: PKR 1,636,500.00 (163650000 paisa)
+        Calculated Net:  PKR 1,636,500.00 (163650000 paisa)
+        Discrepancy:     0 paisa
+
+--------------------------------------------------------------------------------
+TEST 2: Upload Corrupted CSV (Closing Balance Mismatch)
+--------------------------------------------------------------------------------
+[2.1] Validation Result:
+      All Rules Passed: false (R1 Failed as expected)
+      Exceptions Created: 2
+[2.2] Created Exception in Portal Desk:
+      ID: cmv80sllg0015wd6kt4qg185q
+      Type: STATEMENT_BALANCE_MISMATCH
+      Title: "Statement closing balance does not reconcile"
+      Severity: CRITICAL
+      Discrepancy Amount: PKR 136,500.00 (13650000 paisa)
+      Explanation: Calculated closing balance (PKR 1,636,500.00) differs from stated closing balance (PKR 1,500,000.00) by PKR 136,500.00. Tolerance is strictly 0 paisa.
+
+--------------------------------------------------------------------------------
+TEST 3: Duplicate File Re-upload Rejection by SHA-256
+--------------------------------------------------------------------------------
+[3.1] Attempting re-upload of identical file...
+      Target SHA-256: a9484d9ce3845e8c84e0d5e44deb469f35dce6e567a18a129442852f8c89102a
+      Server Decision: REJECTED
+      Response: "409 Conflict: This exact document has already been uploaded with SHA-256: a9484d9ce3845e8c84e0d5e44deb469f35dce6e567a18a129442852f8c89102a. Duplicate uploads are prohibited to maintain audit chain integrity."
+
+--------------------------------------------------------------------------------
+TEST 4: Scanned PDF Parser (NEEDS_OCR & Zero Fabrication Rule)
+--------------------------------------------------------------------------------
+[4.1] PDF Parser Output:
+      Parse Status: NEEDS_OCR
+      Success: false
+      Rows Extracted: 0 (ZERO fabricated rows)
+      Honest Disclosure Message: "scanned PDF requires OCR — not available in MVP; upload the CSV from your bank."
+
+--------------------------------------------------------------------------------
+TEST 5: Category Override with Mandatory Justification & Audit Event
+--------------------------------------------------------------------------------
+[5.1] Original Transaction:
+      Tx ID: cmv809fyv000iwdfcujcpkpcn
+      Description: "Payroll salaries"
+      Amount: PKR 486,200.00
+      Current Category: "Payroll"
+
+[5.2] Attempt 1 (Empty reason):
+      Valid: false
+      Server Decision: 400 Bad Request — A substantive reason (minimum 5 characters) is required to reclassify financial transactions.
+
+[5.3] Attempt 2 (With substantive reason):
+      Status: 200 OK — Reclassification persisted
+      Updated Category: "Direct Materials Procurement"
+      Original Category Preserved: "Payroll"
+      Override Reason: "Reclassified after vendor trade registration confirmation"
+      Audit Event Appended:
+        Event ID: cmv80slu3001dwd6k5mk8xe1z
+        Action: TRANSACTION_CATEGORY_OVERRIDDEN
+        Hash: d24623f20fe7881c55f04a041e0af855166a025df0f299c8cda2bbf3423a5a8d
+        Previous Hash: e50186861ffcaa16688df02d5184edc4602119bae2e09d8a4b76c8c7b784009b
+
+================================================================================
+                   ALL 5 ACCEPTANCE CRITERIA VERIFIED                           
+================================================================================
+```
+
+---
+
+### 4. Verification Test & Build Log
+- `npm test`: 5 test suites passed, 15 tests passed (100%).
+  - `tests/money.test.ts` (4 tests)
+  - `tests/audit.test.ts` (2 tests)
+  - `tests/tenant-isolation.test.ts` (2 tests)
+  - `tests/auth-smoke.test.ts` (2 tests)
+  - `tests/ingestion.test.ts` (5 tests)
+- `npm run build`: 23 routes successfully compiled and optimized.
+

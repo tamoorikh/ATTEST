@@ -100,7 +100,7 @@ export default async function CAConsoleDashboard() {
         <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
           <span className="text-xs text-gray-500 font-medium">Reconciled Bank Volume</span>
           <div className="text-xl font-bold font-mono text-[#0B1220] mt-2">
-            {formatPaise(16365000)}
+            {formatPaise(163650000)}
           </div>
           <div className="text-[11px] text-gray-500 mt-1">8 Transactions Verified</div>
         </div>
@@ -108,7 +108,7 @@ export default async function CAConsoleDashboard() {
         <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
           <span className="text-xs text-gray-500 font-medium">Recorded Book Volume</span>
           <div className="text-xl font-bold font-mono text-[#0B1220] mt-2">
-            {formatPaise(21570000)}
+            {formatPaise(215700000)}
           </div>
           <div className="text-[11px] text-gray-500 mt-1">7 Ledger Entries Verified</div>
         </div>

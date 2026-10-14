@@ -20,10 +20,11 @@ import { DemoBanner } from "@/components/common/DemoBanner";
 
 const navItems = [
   { label: "Dashboard", href: "/portal", icon: LayoutDashboard },
+  { label: "Onboarding", href: "/portal/onboarding", icon: Building },
+  { label: "Sources & Upload", href: "/portal/sources", icon: FileText },
   { label: "Bank Transactions", href: "/portal/transactions", icon: ReceiptText },
   { label: "General Ledger", href: "/portal/ledger", icon: BookOpen },
   { label: "Exceptions", href: "/portal/exceptions", icon: AlertOctagon, badge: 2 },
-  { label: "Documents", href: "/portal/documents", icon: FileText },
   { label: "Trust Certificate", href: "/portal/certificate", icon: Award },
 ];
 

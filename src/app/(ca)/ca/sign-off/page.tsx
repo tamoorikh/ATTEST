@@ -56,7 +56,7 @@ export default async function CASignOffPage() {
             <h3 className="font-bold text-sm text-red-900">Sign-Off Blocked: Open Financial Exceptions</h3>
             <p className="mt-1 text-red-800 leading-relaxed">
               Under CA Assurance Rules, you cannot sign or issue a Certificate while unresolved exceptions remain active.
-              Meridian Textiles currently has <strong>{openExceptions.length} open exceptions</strong> (E-101 and E-102 totaling PKR 45,850.00).
+              Meridian Textiles currently has <strong>{openExceptions.length} open exceptions</strong> (E-101 and E-102 totaling PKR 458,500.00).
             </p>
             <div className="mt-3">
               <Link

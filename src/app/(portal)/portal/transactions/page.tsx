@@ -1,31 +1,72 @@
 import React from "react";
-import { ReceiptText, CheckCircle2, AlertTriangle, ShieldCheck, Calculator } from "lucide-react";
+import { Calculator } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { formatPaise } from "@/lib/money";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { TransactionExplorer } from "./explorer";
 
 export default async function TransactionsPage() {
-  const org = await prisma.organization.findFirst({
-    where: { isDemo: true },
-    include: {
-      bankAccounts: true,
-      bankTransactions: {
-        orderBy: { date: "asc" },
-      },
-    },
+  const session = await getServerSession(authOptions);
+  const orgId = session?.user?.orgId;
+
+  const bankAccount = await prisma.bankAccount.findFirst({
+    where: { orgId: orgId || undefined },
   });
 
-  const transactions = org?.bankTransactions || [];
-  const openingBalance = 8000000;
+  const transactions = await prisma.bankTransaction.findMany({
+    where: { orgId: orgId || undefined },
+    include: {
+      sourceDocument: {
+        select: {
+          id: true,
+          filename: true,
+          sha256: true,
+          tier: true,
+          createdAt: true,
+        },
+      },
+    },
+    orderBy: { date: "asc" },
+  });
+
+  const openingBalance = bankAccount?.openingBalancePaise ?? 80000000;
   const totalDebits = transactions.reduce((sum, tx) => sum + tx.debitPaise, 0);
   const totalCredits = transactions.reduce((sum, tx) => sum + tx.creditPaise, 0);
   const calculatedClosing = openingBalance - totalDebits + totalCredits;
+
+  const serializedTransactions = transactions.map((t) => ({
+    id: t.id,
+    date: t.date.toISOString(),
+    description: t.description,
+    counterparty: t.counterparty,
+    ref: t.ref,
+    debitPaise: t.debitPaise,
+    creditPaise: t.creditPaise,
+    runningBalancePaise: t.runningBalancePaise,
+    balanceOk: t.balanceOk,
+    category: t.category,
+    categoryConfidence: t.categoryConfidence,
+    originalCategory: t.originalCategory,
+    overrideReason: t.overrideReason,
+    matchStatus: t.matchStatus,
+    sourceDocument: t.sourceDocument
+      ? {
+          id: t.sourceDocument.id,
+          filename: t.sourceDocument.filename,
+          sha256: t.sourceDocument.sha256,
+          tier: t.sourceDocument.tier,
+          createdAt: t.sourceDocument.createdAt.toISOString(),
+        }
+      : null,
+  }));
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-[#0B1220]">
-            Bank Statement Transactions
+            Bank Statement Transactions Explorer
           </h1>
           <p className="text-xs text-gray-500 mt-1">
             Habib Bank Limited (HBL) &bull; Acct: 00427901842003 &bull; Period: April 2026
@@ -62,72 +103,11 @@ export default async function TransactionsPage() {
         </div>
       </div>
 
-      {/* Transactions List */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-[#F7F7F5] text-gray-600 font-semibold border-b border-gray-200">
-              <tr>
-                <th className="py-3 px-4">#</th>
-                <th className="py-3 px-4">Date</th>
-                <th className="py-3 px-4">Transaction Details</th>
-                <th className="py-3 px-4">Counterparty / Ref</th>
-                <th className="py-3 px-4 text-right">Debit (Paisa)</th>
-                <th className="py-3 px-4 text-right">Credit (Paisa)</th>
-                <th className="py-3 px-4 text-right">Running Balance</th>
-                <th className="py-3 px-4 text-center">Arithmetic</th>
-                <th className="py-3 px-4 text-center">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {transactions.map((tx, idx) => (
-                <tr key={tx.id} className="hover:bg-gray-50/70">
-                  <td className="py-3 px-4 font-mono text-gray-400">{idx + 1}</td>
-                  <td className="py-3 px-4 font-mono text-gray-600 whitespace-nowrap">
-                    {tx.date.toISOString().split("T")[0]}
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="font-semibold text-[#0B1220]">{tx.description}</div>
-                    <div className="text-[10px] text-gray-500">Category: {tx.category || "Unassigned"}</div>
-                  </td>
-                  <td className="py-3 px-4 font-mono text-gray-600">
-                    <div>{tx.counterparty || "—"}</div>
-                    <div className="text-[10px] text-gray-400">{tx.ref || "No ref"}</div>
-                  </td>
-                  <td className="py-3 px-4 text-right font-mono font-medium text-gray-900">
-                    {tx.debitPaise > 0 ? formatPaise(tx.debitPaise) : "—"}
-                  </td>
-                  <td className="py-3 px-4 text-right font-mono font-medium text-emerald-700">
-                    {tx.creditPaise > 0 ? formatPaise(tx.creditPaise) : "—"}
-                  </td>
-                  <td className="py-3 px-4 text-right font-mono font-bold text-[#0B1220]">
-                    {formatPaise(tx.runningBalancePaise)}
-                  </td>
-                  <td className="py-3 px-4 text-center">
-                    <span className="inline-flex items-center gap-1 font-mono text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                      <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                      OK
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-center">
-                    {tx.matchStatus === "MATCHED" ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        <CheckCircle2 className="w-3 h-3" />
-                        Reconciled
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                        <AlertTriangle className="w-3 h-3" />
-                        Exception
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      {/* Explorer Component */}
+      <TransactionExplorer
+        transactions={serializedTransactions}
+        openingBalancePaise={openingBalance}
+      />
     </div>
   );
 }

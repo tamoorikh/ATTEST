@@ -74,6 +74,9 @@ model CompanyProfile {
   jurisdiction       String       @default("PK")
   city               String?
   address            String?
+  onboardingStep     Int          @default(1)
+  sourcesDeclared    String?
+  authorizedAt       DateTime?
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
 
@@ -110,9 +113,11 @@ model SourceDocument {
   sha256       String
   mime         String
   size         Int
-  parseStatus  String            @default("PENDING") // PENDING, PARSED, FAILED
+  parseStatus  String            @default("PENDING") // PENDING, PARSED, FAILED, NEEDS_OCR
   tier         String            @default("PRIMARY") // PRIMARY, SECONDARY, CORROBORATING
   uploadedById String
+  storagePath  String?
+  metadataJson String?
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
 
@@ -141,6 +146,8 @@ model BankTransaction {
   balanceOk           Boolean         @default(true)
   category            String?
   categoryConfidence  Float?
+  originalCategory    String?
+  overrideReason      String?
   matchStatus         String          @default("UNMATCHED") // UNMATCHED, MATCHED, EXCEPTION
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt

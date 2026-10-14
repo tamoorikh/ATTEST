@@ -4,7 +4,7 @@ import { createHash } from "crypto";
 const prisma = new PrismaClient();
 
 async function verify() {
-  console.log("🔍 Running Database Verification Checks...\n");
+  console.log("🔍 Running Database Verification Checks (Rescaled x10)...\n");
 
   const users = await prisma.user.count();
   const orgs = await prisma.organization.count();
@@ -30,8 +30,8 @@ async function verify() {
   console.log(`Exceptions: ${exceptions}`);
   console.log(`Audit Events: ${auditEvents.length}\n`);
 
-  // Verify Bank Transactions Arithmetic
-  let currentBalance = 8000000; // Opening balance 80,000.00 PKR
+  // Verify Bank Transactions Arithmetic (Rescaled Opening: 80,000,000 paisa = PKR 800,000.00)
+  let currentBalance = 80000000;
   let allBalancesValid = true;
 
   console.log("Checking Bank Transaction Running Balances:");
@@ -47,12 +47,13 @@ async function verify() {
       );
     } else {
       console.log(
-        `  ✓ Tx ${i + 1} [${tx.date.toISOString().split("T")[0]}] ${tx.description.padEnd(28)} Debit: ${(tx.debitPaise / 100).toFixed(2).padStart(9)} | Credit: ${(tx.creditPaise / 100).toFixed(2).padStart(9)} | Balance: ${(tx.runningBalancePaise / 100).toFixed(2).padStart(9)}`
+        `  ✓ Tx ${i + 1} [${tx.date.toISOString().split("T")[0]}] ${tx.description.padEnd(28)} Debit: ${(tx.debitPaise / 100).toFixed(2).padStart(11)} | Credit: ${(tx.creditPaise / 100).toFixed(2).padStart(11)} | Balance: ${(tx.runningBalancePaise / 100).toFixed(2).padStart(11)}`
       );
     }
   }
 
   console.log(`\nBank Statement Arithmetic Validation: ${allBalancesValid ? "PASSED ✅" : "FAILED ❌"}`);
+  console.log(`Final Closing Balance: ${(currentBalance / 100).toFixed(2)} PKR (${currentBalance} paisa)`);
 
   // Verify Audit Chain Integrity
   let chainValid = true;

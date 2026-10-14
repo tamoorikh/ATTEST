@@ -42,6 +42,7 @@ No deviation or substitution permitted without explicit user instruction:
   on every screen of that organization.
 - **Development-Mode Signatures**: Cryptographic signatures generated in development or without hardware/PKI qualification must explicitly state:
   `"development-mode integrity — not a qualified digital signature"`.
+- **Demo Persona Gating**: Persona quick-login must be gated behind DEMO_MODE env flag; forbidden when DEMO_MODE is not 'true'.
 
 ---
 

@@ -17,7 +17,7 @@ function computeHash(
 }
 
 async function main() {
-  console.log("🌱 Starting Attest database seed...");
+  console.log("🌱 Starting Attest database seed (Rescaled x10)...");
 
   // Clear existing data cleanly in reverse-dependency order
   await prisma.auditEvent.deleteMany();
@@ -105,7 +105,7 @@ async function main() {
   console.log("🏢 Created Demo Org: Meridian Textiles (Pvt) Ltd with memberships");
 
   // 3. Create Bank Account (Habib Bank Limited)
-  // Opening balance: 8,000,000 paise (PKR 80,000.00)
+  // Rescaled Opening balance: 80,000,000 paise (PKR 800,000.00)
   const bankAccount = await prisma.bankAccount.create({
     data: {
       orgId: demoOrg.id,
@@ -115,12 +115,12 @@ async function main() {
       branchName: "Kot Lakhpat Industrial Branch, Lahore",
       iban: "PK36HABB0000427901842003",
       currency: "PKR",
-      openingBalancePaise: 8000000,
+      openingBalancePaise: 80000000,
     },
   });
 
   // 4. Source Documents (Bank Statement, Ledger, Invoices)
-  const bankDocSha = createHash("sha256").update("HBL_STATEMENT_APRIL_2026_MOCK_CONTENT").digest("hex");
+  const bankDocSha = createHash("sha256").update("HBL_STATEMENT_APRIL_2026_RESCALED_CONTENT").digest("hex");
   const bankDoc = await prisma.sourceDocument.create({
     data: {
       orgId: demoOrg.id,
@@ -136,7 +136,7 @@ async function main() {
     },
   });
 
-  const ledgerDocSha = createHash("sha256").update("GENERAL_LEDGER_APRIL_2026_MOCK_CONTENT").digest("hex");
+  const ledgerDocSha = createHash("sha256").update("GENERAL_LEDGER_APRIL_2026_RESCALED_CONTENT").digest("hex");
   const ledgerDoc = await prisma.sourceDocument.create({
     data: {
       orgId: demoOrg.id,
@@ -152,7 +152,7 @@ async function main() {
     },
   });
 
-  const invoiceDocSha = createHash("sha256").update("INVOICE_REGISTER_APRIL_2026_MOCK_CONTENT").digest("hex");
+  const invoiceDocSha = createHash("sha256").update("INVOICE_REGISTER_APRIL_2026_RESCALED_CONTENT").digest("hex");
   const invoiceDoc = await prisma.sourceDocument.create({
     data: {
       orgId: demoOrg.id,
@@ -170,26 +170,27 @@ async function main() {
 
   console.log("📄 Created 3 Source Documents");
 
-  // 5. Bank Transactions (April 2026)
-  // Opening: 8,000,000 paise
-  // 1: 02 Apr debit 4,862,000 "Payroll salaries" -> balance 3,138,000
-  // 2: 03 Apr credit 12,400,000 "Buyer remittance — export" -> balance 15,538,000
-  // 3: 05 Apr debit 1,185,000 "Zubair Traders" -> balance 14,353,000
-  // 4: 09 Apr debit 743,000 "Fancy Fabrics" -> balance 13,610,000
-  // 5: 12 Apr credit 3,400,000 "Local transfer in" -> balance 17,010,000
-  // 6: 15 Apr debit 1,185,000 "Zubair Traders" -> balance 15,825,000
-  // 7: 21 Apr debit 420,000 "Utility bills" -> balance 15,405,000
-  // 8: 26 Apr credit 960,000 "Marketplace settlement" -> balance 16,365,000
-  // Exact mathematical integrity across each step (balanceOk: true)
+  // 5. 8 Bank Transactions (April 2026, rescaled x10)
+  // Opening: 80,000,000 paise
+  // 1: 02 Apr debit 48,620,000 "Payroll salaries" -> balance 31,380,000
+  // 2: 03 Apr credit 124,000,000 "Buyer remittance — export" -> balance 155,380,000
+  // 3: 05 Apr debit 11,850,000 "Zubair Traders" -> balance 143,530,000
+  // 4: 09 Apr debit 7,430,000 "Fancy Fabrics" -> balance 136,100,000
+  // 5: 12 Apr credit 34,000,000 "Local transfer in" -> balance 170,100,000
+  // 6: 15 Apr debit 11,850,000 "Zubair Traders" -> balance 158,250,000
+  // 7: 21 Apr debit 4,200,000 "Utility bills" -> balance 154,050,000
+  // 8: 26 Apr credit 9,600,000 "Marketplace settlement" -> balance 163,650,000
+  // Total credits: 167,600,000 | Total debits: 83,950,000 | Net: +83,650,000
+  // Closing balance: 80,000,000 + 83,650,000 = 163,650,000 paisa (balanceOk: true)
   const bankTxData = [
     {
       date: new Date("2026-04-02T10:30:00Z"),
       description: "Payroll salaries",
       counterparty: "Staff Payroll",
       ref: "SAL-2026-04-01",
-      debitPaise: 4862000,
+      debitPaise: 48620000,
       creditPaise: 0,
-      runningBalancePaise: 3138000,
+      runningBalancePaise: 31380000,
       balanceOk: true,
       category: "Payroll",
       categoryConfidence: 0.98,
@@ -201,8 +202,8 @@ async function main() {
       counterparty: "Nordic Loom GmbH",
       ref: "FT-2026-8812",
       debitPaise: 0,
-      creditPaise: 12400000,
-      runningBalancePaise: 15538000,
+      creditPaise: 124000000,
+      runningBalancePaise: 155380000,
       balanceOk: true,
       category: "Revenue",
       categoryConfidence: 0.99,
@@ -213,9 +214,9 @@ async function main() {
       description: "Zubair Traders",
       counterparty: "Zubair Traders",
       ref: "IBFT-48192",
-      debitPaise: 1185000,
+      debitPaise: 11850000,
       creditPaise: 0,
-      runningBalancePaise: 14353000,
+      runningBalancePaise: 143530000,
       balanceOk: true,
       category: "Direct Materials",
       categoryConfidence: 0.95,
@@ -226,9 +227,9 @@ async function main() {
       description: "Fancy Fabrics",
       counterparty: "Fancy Fabrics",
       ref: "CHQ-009182",
-      debitPaise: 743000,
+      debitPaise: 7430000,
       creditPaise: 0,
-      runningBalancePaise: 13610000,
+      runningBalancePaise: 136100000,
       balanceOk: true,
       category: "Direct Materials",
       categoryConfidence: 0.94,
@@ -240,8 +241,8 @@ async function main() {
       counterparty: "Al-Rehman Textiles",
       ref: "IBFT-90124",
       debitPaise: 0,
-      creditPaise: 3400000,
-      runningBalancePaise: 17010000,
+      creditPaise: 34000000,
+      runningBalancePaise: 170100000,
       balanceOk: true,
       category: "Uncategorized Deposit",
       categoryConfidence: 0.45,
@@ -252,9 +253,9 @@ async function main() {
       description: "Zubair Traders",
       counterparty: "Zubair Traders",
       ref: "IBFT-48991",
-      debitPaise: 1185000,
+      debitPaise: 11850000,
       creditPaise: 0,
-      runningBalancePaise: 15825000,
+      runningBalancePaise: 158250000,
       balanceOk: true,
       category: "Direct Materials",
       categoryConfidence: 0.95,
@@ -265,9 +266,9 @@ async function main() {
       description: "Utility bills",
       counterparty: "LESCO Lahore",
       ref: "UTIL-042-881",
-      debitPaise: 420000,
+      debitPaise: 4200000,
       creditPaise: 0,
-      runningBalancePaise: 15405000,
+      runningBalancePaise: 154050000,
       balanceOk: true,
       category: "Utilities",
       categoryConfidence: 0.99,
@@ -279,8 +280,8 @@ async function main() {
       counterparty: "Daraz Financial",
       ref: "SETTL-DZ-41",
       debitPaise: 0,
-      creditPaise: 960000,
-      runningBalancePaise: 16365000,
+      creditPaise: 9600000,
+      runningBalancePaise: 163650000,
       balanceOk: true,
       category: "Revenue",
       categoryConfidence: 0.92,
@@ -302,7 +303,7 @@ async function main() {
     createdBankTxs.push(created);
   }
 
-  console.log(`💳 Created ${createdBankTxs.length} Bank Transactions`);
+  console.log(`💳 Created ${createdBankTxs.length} Bank Transactions (Rescaled)`);
 
   // 6. 7 Ledger Entries (matching all except 12 Apr credit, 15 Apr is duplicate payment)
   const ledgerData = [
@@ -310,7 +311,7 @@ async function main() {
       date: new Date("2026-04-02T10:30:00Z"),
       description: "Payroll salaries — April cycle",
       counterparty: "Staff Payroll",
-      debitPaise: 4862000,
+      debitPaise: 48620000,
       creditPaise: 0,
       account: "Salaries & Wages Expense",
       ref: "SAL-2026-04-01",
@@ -320,7 +321,7 @@ async function main() {
       description: "Buyer remittance — export invoice #EXP-401",
       counterparty: "Nordic Loom GmbH",
       debitPaise: 0,
-      creditPaise: 12400000,
+      creditPaise: 124000000,
       account: "Export Sales Revenue",
       ref: "FT-2026-8812",
     },
@@ -328,7 +329,7 @@ async function main() {
       date: new Date("2026-04-05T11:00:00Z"),
       description: "Payment for yarn procurement #ZT-1141",
       counterparty: "Zubair Traders",
-      debitPaise: 1185000,
+      debitPaise: 11850000,
       creditPaise: 0,
       account: "Accounts Payable",
       ref: "ZT-1141",
@@ -337,17 +338,17 @@ async function main() {
       date: new Date("2026-04-09T16:45:00Z"),
       description: "Payment for dye chemical batch #FF-882",
       counterparty: "Fancy Fabrics",
-      debitPaise: 743000,
+      debitPaise: 7430000,
       creditPaise: 0,
       account: "Direct Materials Expense",
       ref: "CHQ-009182",
     },
-    // Note: 12 Apr credit 3,400,000 has NO ledger entry (E-102 unrecorded sale)!
+    // Note: 12 Apr credit 34,000,000 has NO ledger entry (E-102 unrecorded sale)!
     {
       date: new Date("2026-04-15T09:10:00Z"),
       description: "Second payment booking — Zubair Traders #ZT-1141",
       counterparty: "Zubair Traders",
-      debitPaise: 1185000,
+      debitPaise: 11850000,
       creditPaise: 0,
       account: "Accounts Payable",
       ref: "ZT-1141-DUP",
@@ -356,7 +357,7 @@ async function main() {
       date: new Date("2026-04-21T15:30:00Z"),
       description: "LESCO Electricity Bill April 2026",
       counterparty: "LESCO Lahore",
-      debitPaise: 420000,
+      debitPaise: 4200000,
       creditPaise: 0,
       account: "Utilities Expense",
       ref: "UTIL-042-881",
@@ -366,7 +367,7 @@ async function main() {
       description: "Daraz Marketplace Sales Payout April",
       counterparty: "Daraz Financial",
       debitPaise: 0,
-      creditPaise: 960000,
+      creditPaise: 9600000,
       account: "Domestic Sales Revenue",
       ref: "SETTL-DZ-41",
     },
@@ -384,7 +385,7 @@ async function main() {
     createdLedgerEntries.push(created);
   }
 
-  console.log(`📒 Created ${createdLedgerEntries.length} Ledger Entries`);
+  console.log(`📒 Created ${createdLedgerEntries.length} Ledger Entries (Rescaled)`);
 
   // 7. Matches for the 5 straightforward matched transactions
   const matchConfigs = [
@@ -409,18 +410,18 @@ async function main() {
     });
   }
 
-  // 8. Exceptions
+  // 8. Exceptions (Rescaled x10)
   // E-101: Duplicate payment to Zubair Traders
   const exc1 = await prisma.exception.create({
     data: {
       orgId: demoOrg.id,
       type: "DUPLICATE_PAYMENT",
-      title: "E-101: Potential duplicate payment of PKR 11,850.00 to Zubair Traders",
+      title: "E-101: Potential duplicate payment of PKR 118,500.00 to Zubair Traders",
       explanation:
-        "Two debit transactions of PKR 11,850.00 occurred on 05 Apr and 15 Apr. However, the purchase register only contains one invoice (#ZT-1141) from Zubair Traders.",
+        "Two debit transactions of PKR 118,500.00 occurred on 05 Apr and 15 Apr. However, the purchase register only contains one invoice (#ZT-1141) from Zubair Traders.",
       severity: "HIGH",
       status: "OPEN",
-      amountPaise: 1185000,
+      amountPaise: 11850000,
       period: "2026-04",
       bankTxId: createdBankTxs[5].id, // 15 Apr transaction
       ledgerEntryId: createdLedgerEntries[4].id,
@@ -429,17 +430,17 @@ async function main() {
     },
   });
 
-  // E-102: Unrecorded sale (12 Apr credit 3,400,000 has invoice #SI-2026-3387 but no ledger entry)
+  // E-102: Unrecorded sale (12 Apr credit 34,000,000 has invoice #SI-2026-3387 but no ledger entry)
   const exc2 = await prisma.exception.create({
     data: {
       orgId: demoOrg.id,
       type: "UNRECORDED_SALE",
-      title: "E-102: Unrecorded bank deposit of PKR 34,000.00 from Al-Rehman Textiles",
+      title: "E-102: Unrecorded bank deposit of PKR 340,000.00 from Al-Rehman Textiles",
       explanation:
-        "Bank deposit of PKR 34,000.00 received on 12 Apr has no matching general ledger entry. FBR sales tax invoice #SI-2026-3387 dated 11 Apr exists in invoice register.",
+        "Bank deposit of PKR 340,000.00 received on 12 Apr has no matching general ledger entry. FBR sales tax invoice #SI-2026-3387 dated 11 Apr exists in invoice register.",
       severity: "CRITICAL",
       status: "OPEN",
-      amountPaise: 3400000,
+      amountPaise: 34000000,
       period: "2026-04",
       bankTxId: createdBankTxs[4].id, // 12 Apr transaction
       suggestedResolution:
@@ -454,7 +455,7 @@ async function main() {
       uploadedById: demoOwner.id,
       filename: "FBR_Sales_Invoice_SI-2026-3387.pdf",
       sha256: createHash("sha256").update("FBR_INVOICE_SI_2026_3387").digest("hex"),
-      notes: "Official FBR Annexure-C compliant invoice issued to Al-Rehman Textiles for 3,400,000 paisa.",
+      notes: "Official FBR Annexure-C compliant invoice issued to Al-Rehman Textiles for 34,000,000 paisa.",
     },
   });
 
@@ -470,9 +471,12 @@ async function main() {
         totalLedgerEntries: 7,
         matchedCount: 6,
         exceptionCount: 2,
-        openingBalancePaise: 8000000,
-        closingBalancePaise: 16365000,
+        openingBalancePaise: 80000000,
+        closingBalancePaise: 163650000,
+        totalDebitsPaise: 83950000,
+        totalCreditsPaise: 167600000,
         arithmeticVerified: true,
+        rulesPassed: ["R1_BALANCE_RECONCILIATION", "R2_RUNNING_BALANCES_CHAIN", "R3_DUPLICATE_DETECTION", "R4_CONTINUITY"],
       }),
     },
   });
@@ -494,8 +498,8 @@ async function main() {
         reconciliationTier: "Bank-to-Book Level 2",
       }),
       coverageJson: JSON.stringify({
-        reconciledVolumePaise: 24750000,
-        exceptionVolumePaise: 4585000,
+        reconciledVolumePaise: 247500000,
+        exceptionVolumePaise: 45850000,
         exceptionCount: 2,
         resolvedExceptions: 0,
       }),
@@ -526,7 +530,7 @@ async function main() {
       entityType: "SourceDocument",
       entityId: bankDoc.id,
       actorId: demoOwner.id,
-      metadata: { count: 8, openingBalance: 8000000, closingBalance: 16365000 },
+      metadata: { count: 8, openingBalance: 80000000, closingBalance: 163650000 },
       date: new Date("2026-04-30T10:05:00Z"),
     },
     {
@@ -542,7 +546,7 @@ async function main() {
       entityType: "Exception",
       entityId: exc1.id,
       actorId: null,
-      metadata: { code: "E-101", amount: 1185000 },
+      metadata: { code: "E-101", amount: 11850000 },
       date: new Date("2026-04-30T10:10:01Z"),
     },
     {
@@ -550,7 +554,7 @@ async function main() {
       entityType: "Exception",
       entityId: exc2.id,
       actorId: null,
-      metadata: { code: "E-102", amount: 3400000 },
+      metadata: { code: "E-102", amount: 34000000 },
       date: new Date("2026-04-30T10:10:02Z"),
     },
   ];
@@ -585,7 +589,7 @@ async function main() {
   }
 
   console.log(`⛓️ Initialized AuditEvent hash chain with ${auditEvents.length} cryptographically linked events`);
-  console.log("✅ Seed completed successfully!");
+  console.log("✅ Seed completed successfully with rescaled x10 figures!");
 }
 
 main()

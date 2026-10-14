@@ -43,7 +43,7 @@ export default async function PortalDashboardPage() {
   const totalVolume = transactions.reduce((acc, tx) => acc + tx.debitPaise + tx.creditPaise, 0);
   const matchedCount = transactions.filter((t) => t.matchStatus === "MATCHED").length;
   const matchRate = transactions.length > 0 ? Math.round((matchedCount / transactions.length) * 100) : 0;
-  const latestBalance = transactions[transactions.length - 1]?.runningBalancePaise ?? 8000000;
+  const latestBalance = transactions[transactions.length - 1]?.runningBalancePaise ?? 80000000;
 
   return (
     <div className="space-y-8">
@@ -94,7 +94,7 @@ export default async function PortalDashboardPage() {
             </div>
             <div className="text-[11px] text-gray-500 mt-1 flex items-center gap-1">
               <span>Opening:</span>
-              <span className="font-mono">{formatPaise(8000000)}</span>
+              <span className="font-mono">{formatPaise(80000000)}</span>
               <span className="text-emerald-600 font-semibold">(Verified ✓)</span>
             </div>
           </div>

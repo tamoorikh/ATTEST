@@ -51,6 +51,8 @@ function SignInForm() {
     setPassword(userPass);
   }
 
+  const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+
   return (
     <div className="min-h-screen bg-[#F7F7F5] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
@@ -69,53 +71,55 @@ function SignInForm() {
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        {/* Quick Demo Logins Box */}
-        <div className="mb-6 bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-[#2456E6]" />
-              Quick Demo Personas
-            </span>
-            <span className="text-[10px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded font-mono font-medium border border-amber-200">
-              Pass: Demo1234!
-            </span>
-          </div>
-          <div className="grid grid-cols-2 gap-2 mt-2">
-            <button
-              type="button"
-              onClick={() => handleQuickLogin("demo@attest.pk", "Demo1234!")}
-              className={`p-2.5 rounded-lg border text-left transition-all text-xs flex flex-col justify-between ${
-                email === "demo@attest.pk"
-                  ? "border-[#2456E6] bg-blue-50/50 ring-1 ring-[#2456E6]"
-                  : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-              }`}
-            >
-              <div className="flex items-center gap-1.5 font-semibold text-[#0B1220]">
-                <Building2 className="w-3.5 h-3.5 text-gray-600" />
-                Client Owner
-              </div>
-              <div className="font-mono text-[11px] text-gray-500 truncate mt-1">demo@attest.pk</div>
-              <span className="text-[10px] text-blue-600 font-medium mt-1">Meridian Textiles &rarr;</span>
-            </button>
+        {/* Quick Demo Logins Box — Gated behind DEMO_MODE */}
+        {isDemoMode && (
+          <div className="mb-6 bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-semibold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-[#2456E6]" />
+                Quick Demo Personas
+              </span>
+              <span className="text-[10px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded font-mono font-medium border border-amber-200">
+                Pass: Demo1234!
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              <button
+                type="button"
+                onClick={() => handleQuickLogin("demo@attest.pk", "Demo1234!")}
+                className={`p-2.5 rounded-lg border text-left transition-all text-xs flex flex-col justify-between ${
+                  email === "demo@attest.pk"
+                    ? "border-[#2456E6] bg-blue-50/50 ring-1 ring-[#2456E6]"
+                    : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                }`}
+              >
+                <div className="flex items-center gap-1.5 font-semibold text-[#0B1220]">
+                  <Building2 className="w-3.5 h-3.5 text-gray-600" />
+                  Client Owner
+                </div>
+                <div className="font-mono text-[11px] text-gray-500 truncate mt-1">demo@attest.pk</div>
+                <span className="text-[10px] text-blue-600 font-medium mt-1">Meridian Textiles &rarr;</span>
+              </button>
 
-            <button
-              type="button"
-              onClick={() => handleQuickLogin("ca@attest.pk", "Demo1234!")}
-              className={`p-2.5 rounded-lg border text-left transition-all text-xs flex flex-col justify-between ${
-                email === "ca@attest.pk"
-                  ? "border-[#2456E6] bg-blue-50/50 ring-1 ring-[#2456E6]"
-                  : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-              }`}
-            >
-              <div className="flex items-center gap-1.5 font-semibold text-[#0B1220]">
-                <UserCheck className="w-3.5 h-3.5 text-gray-600" />
-                Chartered Acct
-              </div>
-              <div className="font-mono text-[11px] text-gray-500 truncate mt-1">ca@attest.pk</div>
-              <span className="text-[10px] text-blue-600 font-medium mt-1">CA Reviewer &rarr;</span>
-            </button>
+              <button
+                type="button"
+                onClick={() => handleQuickLogin("ca@attest.pk", "Demo1234!")}
+                className={`p-2.5 rounded-lg border text-left transition-all text-xs flex flex-col justify-between ${
+                  email === "ca@attest.pk"
+                    ? "border-[#2456E6] bg-blue-50/50 ring-1 ring-[#2456E6]"
+                    : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                }`}
+              >
+                <div className="flex items-center gap-1.5 font-semibold text-[#0B1220]">
+                  <UserCheck className="w-3.5 h-3.5 text-gray-600" />
+                  Chartered Acct
+                </div>
+                <div className="font-mono text-[11px] text-gray-500 truncate mt-1">ca@attest.pk</div>
+                <span className="text-[10px] text-blue-600 font-medium mt-1">CA Reviewer &rarr;</span>
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="bg-white py-8 px-6 border border-gray-200 rounded-xl shadow-sm sm:px-8">
           {error && (
