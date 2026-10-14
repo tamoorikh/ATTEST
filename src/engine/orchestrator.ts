@@ -295,24 +295,36 @@ export async function executeOrchestratorForPeriod(
          (!e.bankTxId && !exc.bankTxId && e.ledgerEntryId === exc.ledgerEntryId))
     );
 
+    const dedupKey = `${orgId}:${period}:${exc.type}:${exc.bankTxId || exc.ledgerEntryId || exc.amountPaise}`;
+
     if (!existing) {
-      // Brand new exception
-      await prisma.exception.create({
-        data: {
-          orgId,
-          type: exc.type,
-          title: exc.title,
-          explanation: `${exc.explanation} ${exc.whyItMatters}`,
-          severity: exc.severity,
-          status: "OPEN",
-          amountPaise: exc.amountPaise,
-          period,
-          bankTxId: exc.bankTxId,
-          ledgerEntryId: exc.ledgerEntryId,
-          suggestedResolution: `${exc.suggestedResolution} Evidence required: ${exc.evidenceRequired}`,
-        },
-      });
-      newExceptionsCreated++;
+      // Brand new exception (enforces unique constraint across concurrent runs)
+      try {
+        await prisma.exception.create({
+          data: {
+            orgId,
+            type: exc.type,
+            title: exc.title,
+            explanation: `${exc.explanation} ${exc.whyItMatters}`,
+            severity: exc.severity,
+            status: "OPEN",
+            amountPaise: exc.amountPaise,
+            period,
+            bankTxId: exc.bankTxId,
+            ledgerEntryId: exc.ledgerEntryId,
+            suggestedResolution: `${exc.suggestedResolution} Evidence required: ${exc.evidenceRequired}`,
+            dedupKey,
+          },
+        });
+        newExceptionsCreated++;
+      } catch (err: any) {
+        // Unique constraint violation (P2002) prevents duplicate creation in concurrent runs
+        if (err?.code === "P2002") {
+          // Already created concurrently; do not duplicate
+        } else {
+          throw err;
+        }
+      }
     } else {
       // If already resolved by user/CA, respect resolution
       if (existing.status === "RESOLVED" || existing.status === "WAIVED") {

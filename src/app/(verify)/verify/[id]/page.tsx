@@ -83,6 +83,7 @@ export default async function PublicCertificateVerifierPage({
       org: {
         select: {
           name: true,
+          isDemo: true,
           companyProfile: {
             select: {
               legalName: true,
@@ -187,6 +188,21 @@ export default async function PublicCertificateVerifierPage({
           Verified at: <span className="text-[#0F172A] font-semibold">{verificationTimestamp}</span>
         </span>
       </div>
+
+      {/* Demonstration Data Ribbon */}
+      {cert.org.isDemo && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs px-4 py-2.5 rounded-xl font-medium flex items-center justify-between shadow-sm">
+          <div className="flex items-center gap-2">
+            <span className="inline-block w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+            <span>
+              <strong>DEMONSTRATION DATA</strong> &mdash; This certificate belongs to demonstration entity {cert.org.name}. Synthetic dataset for assurance testing.
+            </span>
+          </div>
+          <span className="text-[10px] font-mono uppercase bg-amber-100 text-amber-900 px-2 py-0.5 rounded font-bold border border-amber-300">
+            Demo Mode
+          </span>
+        </div>
+      )}
 
       {/* Main Verification Certificate Card */}
       <div className="bg-white border border-[#E6E9EF] rounded-2xl shadow-sm p-6 sm:p-10 space-y-8 relative">

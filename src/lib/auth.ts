@@ -3,10 +3,12 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
 
+import { checkRateLimit } from "./rateLimit";
+
 export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    maxAge: 24 * 60 * 60, // default 24 hours session expiry
   },
   pages: {
     signIn: "/auth/signin",
@@ -18,13 +20,33 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: "Email", type: "email", placeholder: "user@example.com" },
         password: { label: "Password", type: "password" },
+        isQuickLogin: { label: "IsQuickLogin", type: "text" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
+        // 1. IP-based Rate Limiting (5 attempts / min / IP with lockout message)
+        let ip = "127.0.0.1";
+        if (req?.headers) {
+          const forwarded = req.headers["x-forwarded-for"];
+          ip = (Array.isArray(forwarded) ? forwarded[0] : forwarded) || (req.headers["x-real-ip"] as string) || "127.0.0.1";
+        }
+        const rl = checkRateLimit(`auth-login:${ip}`, 5, 60000);
+        if (!rl.allowed) {
+          throw new Error("Too many login attempts from this IP address. Account access is temporarily locked. Please wait 1 minute before trying again.");
+        }
+
         if (!credentials?.email || !credentials?.password) {
           throw new Error("Please enter both email and password");
         }
 
         const email = credentials.email.toLowerCase().trim();
+
+        // 2. DEMO_MODE Enforced Gating: quick-login / demo accounts require DEMO_MODE
+        const isDemoRequested = credentials.isQuickLogin === "true" || email === "demo@attest.pk" || email === "ca@attest.pk";
+        const isDemoAllowed = process.env.DEMO_MODE === "true";
+        if (isDemoRequested && !isDemoAllowed) {
+          throw new Error("Demo persona quick-login is disabled when DEMO_MODE is false.");
+        }
+
         const user = await prisma.user.findUnique({
           where: { email },
           include: {

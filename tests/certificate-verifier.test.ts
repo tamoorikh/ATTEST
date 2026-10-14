@@ -84,7 +84,7 @@ describe("Phase 4: Certificate Sign-off, Issuance & Public Verifier", () => {
         orgId: demoOrgId,
         period,
         severity: { in: ["HIGH", "CRITICAL"] },
-        status: "OPEN",
+        status: { notIn: ["RESOLVED", "WAIVED"] },
       },
       data: {
         status: "RESOLVED",

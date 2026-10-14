@@ -154,75 +154,95 @@ export async function validateAndNormalizeBankStatement(
 
   if (!r1Passed) {
     const diff = Math.abs(calculatedClosingPaise - closingBalancePaise);
-    const exc = await prisma.exception.create({
-      data: {
-        orgId,
-        type: "STATEMENT_BALANCE_MISMATCH",
-        title: "Statement closing balance does not reconcile",
-        explanation: `Calculated closing balance (${formatPaise(calculatedClosingPaise)}) differs from stated closing balance (${formatPaise(closingBalancePaise)}) by ${formatPaise(diff)}. Tolerance is strictly 0 paisa.`,
-        severity: "CRITICAL",
-        status: "OPEN",
-        amountPaise: diff,
-        period,
-        suggestedResolution:
-          "Verify statement transactions against physical paper bank statement or request updated electronic statement from issuing bank.",
-      },
-    });
-    createdExceptions.push(exc);
+    try {
+      const exc = await prisma.exception.create({
+        data: {
+          orgId,
+          type: "STATEMENT_BALANCE_MISMATCH",
+          title: "Statement closing balance does not reconcile",
+          explanation: `Calculated closing balance (${formatPaise(calculatedClosingPaise)}) differs from stated closing balance (${formatPaise(closingBalancePaise)}) by ${formatPaise(diff)}. Tolerance is strictly 0 paisa.`,
+          severity: "CRITICAL",
+          status: "OPEN",
+          amountPaise: diff,
+          period,
+          dedupKey: `${orgId}:${period}:STATEMENT_BALANCE_MISMATCH`,
+          suggestedResolution:
+            "Verify statement transactions against physical paper bank statement or request updated electronic statement from issuing bank.",
+        },
+      });
+      createdExceptions.push(exc);
+    } catch (err: any) {
+      if (err?.code !== "P2002") throw err;
+    }
   }
 
   if (!r2Passed && runningBalanceBreakIndex !== -1) {
     const brokenTx = createdTransactions[runningBalanceBreakIndex];
-    const exc = await prisma.exception.create({
-      data: {
-        orgId,
-        type: "RUNNING_BALANCE_CHAIN_BREAK",
-        title: `Running balance continuity break detected at row ${runningBalanceBreakIndex + 1}`,
-        explanation: `Row ${runningBalanceBreakIndex + 1} (${brokenTx.description}) stated running balance does not mathematically equal previous balance plus credits minus debits.`,
-        severity: "HIGH",
-        status: "OPEN",
-        period,
-        bankTxId: brokenTx.id,
-        suggestedResolution: "Inspect statement for omitted or redacted interim transactions.",
-      },
-    });
-    createdExceptions.push(exc);
+    try {
+      const exc = await prisma.exception.create({
+        data: {
+          orgId,
+          type: "RUNNING_BALANCE_CHAIN_BREAK",
+          title: `Running balance continuity break detected at row ${runningBalanceBreakIndex + 1}`,
+          explanation: `Row ${runningBalanceBreakIndex + 1} (${brokenTx.description}) stated running balance does not mathematically equal previous balance plus credits minus debits.`,
+          severity: "HIGH",
+          status: "OPEN",
+          period,
+          bankTxId: brokenTx.id,
+          dedupKey: `${orgId}:${period}:RUNNING_BALANCE_CHAIN_BREAK:${brokenTx.id}`,
+          suggestedResolution: "Inspect statement for omitted or redacted interim transactions.",
+        },
+      });
+      createdExceptions.push(exc);
+    } catch (err: any) {
+      if (err?.code !== "P2002") throw err;
+    }
   }
 
   if (!r3Passed) {
     for (const dup of duplicates) {
-      const exc = await prisma.exception.create({
-        data: {
-          orgId,
-          type: "POTENTIAL_DUPLICATE_TX",
-          title: `Potential duplicate transaction within statement: "${dup.desc}"`,
-          explanation: `Identical transaction of ${formatPaise(dup.amountPaise)} appeared multiple times on the same date.`,
-          severity: "HIGH",
-          status: "OPEN",
-          amountPaise: dup.amountPaise,
-          period,
-          suggestedResolution: "Verify if vendor was paid twice or bank charged debit twice.",
-        },
-      });
-      createdExceptions.push(exc);
+      try {
+        const exc = await prisma.exception.create({
+          data: {
+            orgId,
+            type: "POTENTIAL_DUPLICATE_TX",
+            title: `Potential duplicate transaction within statement: "${dup.desc}"`,
+            explanation: `Identical transaction of ${formatPaise(dup.amountPaise)} appeared multiple times on the same date.`,
+            severity: "HIGH",
+            status: "OPEN",
+            amountPaise: dup.amountPaise,
+            period,
+            dedupKey: `${orgId}:${period}:POTENTIAL_DUPLICATE_TX:${dup.desc}:${dup.amountPaise}`,
+            suggestedResolution: "Verify if vendor was paid twice or bank charged debit twice.",
+          },
+        });
+        createdExceptions.push(exc);
+      } catch (err: any) {
+        if (err?.code !== "P2002") throw err;
+      }
     }
   }
 
   if (!r4Passed && previousClosingBalancePaise !== null) {
-    const exc = await prisma.exception.create({
-      data: {
-        orgId,
-        type: "CONSECUTIVE_CONTINUITY_BREAK",
-        title: "Consecutive statement opening balance mismatch",
-        explanation: `Statement opening balance (${formatPaise(openingBalancePaise)}) does not equal prior statement closing balance (${formatPaise(previousClosingBalancePaise)}).`,
-        severity: "HIGH",
-        status: "OPEN",
-        period,
-        amountPaise: Math.abs(openingBalancePaise - previousClosingBalancePaise),
-        suggestedResolution: "Ensure statements are ingested in chronological order without date gaps.",
-      },
-    });
-    createdExceptions.push(exc);
+    try {
+      const exc = await prisma.exception.create({
+        data: {
+          orgId,
+          type: "CONSECUTIVE_CONTINUITY_BREAK",
+          title: "Consecutive statement opening balance mismatch",
+          explanation: `Statement opening balance (${formatPaise(openingBalancePaise)}) does not equal prior statement closing balance (${formatPaise(previousClosingBalancePaise)}).`,
+          severity: "HIGH",
+          status: "OPEN",
+          period,
+          amountPaise: Math.abs(openingBalancePaise - previousClosingBalancePaise),
+          dedupKey: `${orgId}:${period}:CONSECUTIVE_CONTINUITY_BREAK`,
+          suggestedResolution: "Ensure statements are ingested in chronological order without date gaps.",
+        },
+      });
+      createdExceptions.push(exc);
+    } catch (err: any) {
+      if (err?.code !== "P2002") throw err;
+    }
   }
 
   // Persist ProcessingRun with statsJson (Appends run, never overwrites!)

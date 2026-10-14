@@ -59,3 +59,37 @@ export async function appendAuditEvent(input: CreateAuditInput) {
     },
   });
 }
+
+/**
+ * Verifies the cryptographic integrity of an organization's audit chain.
+ * Recomputes SHA-256 hashes and verifies unbroken links from GENESIS.
+ */
+export async function verifyAuditChain(orgId: string): Promise<boolean> {
+  const events = await prisma.auditEvent.findMany({
+    where: { orgId },
+    orderBy: { createdAt: "asc" },
+  });
+
+  if (events.length === 0) return true;
+
+  let expectedPrevHash = "GENESIS";
+  for (const ev of events) {
+    if (ev.prevHash !== expectedPrevHash) {
+      return false;
+    }
+    const computed = computeAuditHash(
+      ev.prevHash,
+      ev.actorId || "SYSTEM",
+      ev.action,
+      ev.entityType,
+      ev.entityId,
+      ev.createdAt.toISOString()
+    );
+    if (computed !== ev.hash) {
+      return false;
+    }
+    expectedPrevHash = ev.hash;
+  }
+
+  return true;
+}

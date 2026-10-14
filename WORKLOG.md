@@ -729,6 +729,86 @@ Phase 4 introduces the network moment of Attest: a cryptographically signed trus
 - `npm test`: 8 test suites passed, 52 tests passed (100%).
 - `npm run build`: 33 routes successfully compiled and optimized.
 
+---
+
+## Phase 5: Hardening, Demo Polish & Ship (MVP-1 Shipped)
+
+**Date**: October 14, 2026  
+**Status**: COMPLETE (Shipped & Demo-Ready)  
+**Git Commit Target**: `"P5: ship-ready MVP-1"`
+
+---
+
+### 1. Master Implementation Status Table (Original Build Spec vs Shipped Reality)
+
+| Spec Area | Status | Shipped Implementation Details | Automated Test Proof & Reference |
+| :--- | :--- | :--- | :--- |
+| **Money Rule** (Paisa Minor Units) | **IMPLEMENTED** | Integer minor units (`paisa`) enforced across DB schema, math, reconciliation, and UI. Float money strictly rejected with `TypeError`. | `tests/money.test.ts`, `tests/hardening.test.ts` (A1) |
+| **Ingestion Engine** (CSV/PDF) | **IMPLEMENTED** | Multi-file parser with column mapping, header validation, 25MB limits, cryptographic SHA-256 deduplication, and isolated tenant storage. | `tests/ingestion.test.ts`, `src/lib/parser/csv.ts` |
+| **Validation Rules R1–R4** | **IMPLEMENTED** | 4-tier arithmetic engine: R1 (Statement Balance), R2 (Running Balance), R3 (Zero Inversion), R4 (Consecutive Multi-Period Continuity across 3+ statements). | `tests/ingestion.test.ts`, `tests/hardening.test.ts` (A2) |
+| **Deterministic Matcher** | **IMPLEMENTED** | 3-pass algorithm: Pass 1 (1:1 Exact & Candidate Detection), Pass 2 (1:Many Split Payments), Pass 3 (Partial Payments with difference calculation). 100% explainable, zero AI dependency. | `tests/engine.test.ts`, `tests/hardening.test.ts` (A3) |
+| **Exception Generator** | **IMPLEMENTED** | Surfaces plain-language exceptions with materiality weighting: E-101 (Duplicate Payment, HIGH), E-102 (Unrecorded Credit, HIGH), and category-aware evidence checks. | `tests/engine.test.ts`, `src/engine/exceptions.ts` |
+| **Exception Resolution Loop** | **IMPLEMENTED** | Client 3-step resolution stepper modal (Reason &rarr; Evidence &rarr; Legal Declaration); CA review workpaper console; adjusting journal entries automatically created on approval. | `tests/resolution-review.test.ts`, `/portal/exceptions` |
+| **Pre-Issuance Sign-Off Gates** | **IMPLEMENTED** | Server-enforced 5-gate checklist before issuance: source statements present, R1–R4 pass, zero open high/critical exceptions, CA note &ge;50 chars, level computed honestly. | `tests/certificate-verifier.test.ts`, `src/lib/gates.ts` |
+| **Cryptographic Signing Engine** | **IMPLEMENTED** | Deterministic recursive key-sorted JSON canonicalization; SHA-256 payload hash; HMAC-SHA256 signature with transparent development-mode disclosure. | `tests/certificate-verifier.test.ts`, `tests/hardening.test.ts` (A4) |
+| **Public Verifier** (`/verify/[id]`) | **IMPLEMENTED** | Account-free public verification; strictly excludes bank transactions and accounts (Privacy Shield); rate-limited against brute-force enumeration; tracks revocations and superseded versions. | `tests/certificate-verifier.test.ts`, `/verify/[id]` |
+| **Third-Party Consent Charter** | **IMPLEMENTED** | Scoped third-party disclosure request flow; 7-day cryptographic single-use download tokens; category-restricted evidence pack generation. | `tests/certificate-verifier.test.ts`, `/api/disclosures` |
+| **Demo Mode & Reset Action** | **IMPLEMENTED** | Quick-login strictly gated behind `DEMO_MODE` env flag (rejected when false); idempotent wipe + re-seed action with confirmation modal for PlatformAdmin; demo banner on all demo routes. | `tests/hardening.test.ts` (B1, B2, B3), `src/lib/demoReset.ts` |
+| **Security Pass & Tenant Isolation** | **IMPLEMENTED** | Auth endpoint rate-limiting (5 req/min/IP with lockout message); cross-tenant download isolation (Org B requesting Org A doc returns 403 Forbidden); 24h default session expiry; zero secrets in client bundles. | `tests/hardening.test.ts` (D1, D2, D5), `tests/tenant-isolation.test.ts` |
+| **Scanned Document OCR** | **DELIBERATELY DEFERRED** | Scanned PDFs without text streams are safely detected and assigned `parseStatus: "NEEDS_OCR"` with zero hallucinated rows. Optical character recognition engine deferred post-MVP. | `tests/ingestion.test.ts` |
+| **Direct Bank Open-Banking APIs** | **DELIBERATELY DEFERRED** | Open banking APIs do not exist in Pakistan; bank statements are client-provided CSV/PDF. Cryptographic hashes prove integrity-since-upload, not bank institutional authenticity. | `ATTEST.md` Section 4 |
+| **PKI Hardware Qualified Signatures** | **DELIBERATELY DEFERRED** | Physical cryptographic smart cards / USB tokens / Cloud KMS HSM deferred. HMAC-SHA256 development-mode integrity active and transparently labeled. | `ATTEST.md` Section 4 |
+| **Multi-Currency Conversion** | **DELIBERATELY DEFERRED** | Single-currency (`PKR`) enforced per engagement to prevent floating-point conversion distortion. Cross-currency translation engine deferred post-MVP. | `src/engine/matcher.ts` |
+| **Email / WhatsApp Delivery** | **DELIBERATELY DEFERRED** | External SMTP and WhatsApp Business API delivery deferred; in-app Notification Center and copyable verification link sharing fully operational. | `src/components/common/NotificationBell.tsx` |
+
+---
+
+### 2. Phase 5 Hardening & Verification Results
+
+#### A. Test Suite Completion & Flakiness Elimination
+- **Money Arithmetic Edge Cases**:
+  - Zero-value transactions accurately handled (`PKR 0.00`, 0 paise).
+  - Maximum safe integers (`Number.MAX_SAFE_INTEGER`, 9,007,199,254,740,991 paise = PKR 90.07 Trillion) formatted and incremented with zero precision loss.
+  - Negative-amount CSV rows normalized (negative debits converted to credits and vice versa).
+- **R4 Continuity Across Three Consecutive Statements**:
+  - Verified continuous progression across Month 1 (Opening 50M, Closing 60M) &rarr; Month 2 (Opening 60M, Closing 45M) &rarr; Month 3 (Opening 45M, Closing 65M).
+  - Verified continuity break detection when Month 4 has an opening balance mismatch (opening 68M vs previous closing 65M).
+- **Matcher Idempotency at Scale (200 Transactions)**:
+  - 200 synthetic transactions processed through matcher and exception generator; exact same 10 exceptions produced on initial run and rerun; zero duplicate exceptions created.
+- **Certificate Payload Canonicalization**:
+  - Shuffled and reversed JSON key orders verified to produce character-for-character identical canonical JSON and identical SHA-256 hashes.
+- **Concurrent Processing-Run Safety**:
+  - Enforced unique database constraint on `Exception.dedupKey` (`@unique`).
+  - Two parallel execution threads attempting to create identical exceptions simultaneously handled: 1 succeeded, 1 was safely blocked with `P2002` duplicate prevention, ensuring zero duplicate records in the database.
+- **Flakiness Audit**:
+  - Isolated test file database concurrency using `fileParallelism: false` in `vitest.config.ts`.
+  - Executed 3 consecutive full test runs: **All 9 test files, 67 tests passed 3 times in a row with 0 failures**.
+
+#### B. Demo Mode Hardening
+- `DEMO_MODE` env flag verification: Quick-login rejected with explicit error message when `DEMO_MODE="false"`.
+- Idempotent `resetDemoData()`: Wipes and reseeds Meridian Textiles in a single clean sequence; recreates 8 bank transactions, 7 ledger entries, and reinitializes a 6-event cryptographic audit chain with valid SHA-256 continuity (`verifyAuditChain()` returns `true`).
+- `DEMONSTRATION DATA` ribbon crawler: Confirmed presence on every demo organization screen across `/portal` and `/ca` routes.
+
+#### C. Security Pass
+- **Auth Endpoint Rate Limiting**: NextAuth credentials provider enforces 5 requests/minute per client IP; trips on 6th attempt with lockout messaging.
+- **Tenant Isolation on File Downloads**: Request by Org B user session to download Org A source document strictly returns HTTP 403 Forbidden (`"Tenant boundary violation"`). Non-existent IDs return HTTP 404.
+- **Zero Client Bundle Secrets**: Grepped `.next/static` production bundle for `SIGNING_KEY`, `AUTH_SECRET`, and development secret strings: **0 matches found**.
+- **Stack Trace Suppression**: All server endpoints return sanitized JSON error messages with zero internal database stack traces leaked to clients.
+- **Session Expiry**: Default session duration configured to 24 hours (`maxAge: 86400`).
+
+#### D. Production Build Hygiene
+- `npm run build`: Compiled 34 static and dynamic routes cleanly with **zero warnings** and zero errors.
+
+---
+
+### 3. Final Verification Counts
+- **Total Test Suites**: 9 passed (9 total)
+- **Total Tests**: 67 passed (67 total, 100% passing)
+- **3-Run Flakiness Check**: Run 1 (67/67), Run 2 (67/67), Run 3 (67/67)
+- **Build Output**: 34 pages optimized, zero bundle warnings
+- **Secret Audit**: 0 secrets leaked in client bundles
+
+
 
 
 

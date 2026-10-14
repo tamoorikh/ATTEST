@@ -234,6 +234,7 @@ model Exception {
   isEscalated         Boolean             @default(false)
   resolvedById        String?
   resolvedAt          DateTime?
+  dedupKey            String?             @unique
 
   createdAt           DateTime            @default(now())
   updatedAt           DateTime            @updatedAt

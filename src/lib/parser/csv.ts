@@ -192,6 +192,16 @@ export function parseBankStatementCsv(
         creditPaise = parseToPaise(cells[mapping.credit]);
       }
 
+      // Handle negative amount edge cases: negative debit is an inflow (credit); negative credit is an outflow (debit)
+      if (debitPaise < 0) {
+        creditPaise = Math.abs(debitPaise);
+        debitPaise = 0;
+      }
+      if (creditPaise < 0) {
+        debitPaise = Math.abs(creditPaise);
+        creditPaise = 0;
+      }
+
       let runningBalancePaise: number | undefined = undefined;
       if (mapping.balance !== undefined && cells[mapping.balance]) {
         runningBalancePaise = parseToPaise(cells[mapping.balance]);
