@@ -1,0 +1,383 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                 String              @id @default(cuid())
+  email              String              @unique
+  name               String?
+  passwordHash       String
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  memberships        Membership[]
+  uploadedDocs       SourceDocument[]
+  exceptionComments  ExceptionComment[]
+  exceptionEvidence  ExceptionEvidence[]
+  reviewNotes        ReviewNote[]
+  certificatesSigned Certificate[]
+  notifications      Notification[]
+  auditEvents        AuditEvent[]
+}
+
+model Organization {
+  id                 String              @id @default(cuid())
+  name               String
+  slug               String              @unique
+  isDemo             Boolean             @default(false)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  memberships        Membership[]
+  companyProfile     CompanyProfile?
+  bankAccounts       BankAccount[]
+  sourceDocuments    SourceDocument[]
+  bankTransactions   BankTransaction[]
+  ledgerEntries      LedgerEntry[]
+  matches            Match[]
+  exceptions         Exception[]
+  reviewNotes        ReviewNote[]
+  processingRuns     ProcessingRun[]
+  certificates       Certificate[]
+  disclosureRequests DisclosureRequest[]
+  notifications      Notification[]
+  auditEvents        AuditEvent[]
+}
+
+model Membership {
+  id        String       @id @default(cuid())
+  userId    String
+  orgId     String
+  role      String       // Owner, FinanceManager, Accountant, CA-reviewer, PlatformAdmin
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, orgId])
+  @@index([orgId])
+  @@index([userId])
+}
+
+model CompanyProfile {
+  id                 String       @id @default(cuid())
+  orgId              String       @unique
+  legalName          String
+  registrationNumber String?
+  taxId              String?      // NTN or STRN
+  jurisdiction       String       @default("PK")
+  city               String?
+  address            String?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  org                Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+}
+
+model BankAccount {
+  id                  String            @id @default(cuid())
+  orgId               String
+  accountName         String
+  accountNumber       String
+  bankName            String
+  branchName          String?
+  iban                String?
+  currency            String            @default("PKR")
+  openingBalancePaise Int               @default(0)
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  org                 Organization      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  bankTransactions    BankTransaction[]
+
+  @@index([orgId])
+}
+
+model SourceDocument {
+  id           String            @id @default(cuid())
+  orgId        String
+  filename     String
+  type         String            // BANK_STATEMENT, LEDGER, INVOICE_REGISTER, TAX_FILING
+  period       String            // e.g. "2026-04"
+  sha256       String
+  mime         String
+  size         Int
+  parseStatus  String            @default("PENDING") // PENDING, PARSED, FAILED
+  tier         String            @default("PRIMARY") // PRIMARY, SECONDARY, CORROBORATING
+  uploadedById String
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  org          Organization      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  uploadedBy   User              @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+  bankTransactions BankTransaction[]
+  ledgerEntries    LedgerEntry[]
+
+  @@index([orgId])
+  @@index([uploadedById])
+}
+
+model BankTransaction {
+  id                  String          @id @default(cuid())
+  orgId               String
+  bankAccountId       String?
+  sourceDocumentId    String?
+  date                DateTime
+  description         String
+  counterparty        String?
+  ref                 String?
+  debitPaise          Int             @default(0)
+  creditPaise         Int             @default(0)
+  currency            String          @default("PKR")
+  runningBalancePaise Int
+  balanceOk           Boolean         @default(true)
+  category            String?
+  categoryConfidence  Float?
+  matchStatus         String          @default("UNMATCHED") // UNMATCHED, MATCHED, EXCEPTION
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  org                 Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  bankAccount         BankAccount?    @relation(fields: [bankAccountId], references: [id], onDelete: SetNull)
+  sourceDocument      SourceDocument? @relation(fields: [sourceDocumentId], references: [id], onDelete: SetNull)
+  matches             Match[]
+  exceptions          Exception[]
+
+  @@index([orgId])
+  @@index([sourceDocumentId])
+  @@index([bankAccountId])
+  @@index([date])
+}
+
+model LedgerEntry {
+  id               String          @id @default(cuid())
+  orgId            String
+  sourceDocumentId String?
+  date             DateTime
+  description      String
+  counterparty     String?
+  debitPaise       Int             @default(0)
+  creditPaise      Int             @default(0)
+  account          String          // "Sales", "Salaries Expense", "Accounts Payable", etc.
+  ref              String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  org              Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  sourceDocument   SourceDocument? @relation(fields: [sourceDocumentId], references: [id], onDelete: SetNull)
+  matches          Match[]
+  exceptions       Exception[]
+
+  @@index([orgId])
+  @@index([sourceDocumentId])
+  @@index([date])
+}
+
+model Match {
+  id            String          @id @default(cuid())
+  orgId         String
+  bankTxId      String
+  ledgerEntryId String
+  rule          String          // EXACT_AMOUNT_DATE, INVOICE_REF_MATCH, HEURISTIC
+  score         Float           @default(1.0)
+  status        String          @default("CONFIRMED") // CANDIDATE, CONFIRMED, REJECTED
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  org           Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  bankTx        BankTransaction @relation(fields: [bankTxId], references: [id], onDelete: Cascade)
+  ledgerEntry   LedgerEntry     @relation(fields: [ledgerEntryId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@index([bankTxId])
+  @@index([ledgerEntryId])
+}
+
+model Exception {
+  id                  String              @id @default(cuid())
+  orgId               String
+  type                String              // UNRECORDED_SALE, DUPLICATE_PAYMENT, AMOUNT_MISMATCH, etc.
+  title               String
+  explanation         String
+  severity            String              @default("MEDIUM") // LOW, MEDIUM, HIGH, CRITICAL
+  status              String              @default("OPEN") // OPEN, IN_REVIEW, RESOLVED, WAIVED
+  amountPaise         Int                 @default(0)
+  period              String              // "2026-04"
+  bankTxId            String?
+  ledgerEntryId       String?
+  suggestedResolution String?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  org                 Organization        @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  bankTx              BankTransaction?    @relation(fields: [bankTxId], references: [id], onDelete: SetNull)
+  ledgerEntry         LedgerEntry?        @relation(fields: [ledgerEntryId], references: [id], onDelete: SetNull)
+  comments            ExceptionComment[]
+  evidence            ExceptionEvidence[]
+
+  @@index([orgId])
+  @@index([bankTxId])
+  @@index([ledgerEntryId])
+  @@index([status])
+}
+
+model ExceptionComment {
+  id          String    @id @default(cuid())
+  exceptionId String
+  authorId    String
+  content     String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  exception   Exception @relation(fields: [exceptionId], references: [id], onDelete: Cascade)
+  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([exceptionId])
+  @@index([authorId])
+}
+
+model ExceptionEvidence {
+  id          String    @id @default(cuid())
+  exceptionId String
+  uploadedById String
+  filename    String
+  fileUrl     String?
+  sha256      String
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  exception   Exception @relation(fields: [exceptionId], references: [id], onDelete: Cascade)
+  uploadedBy  User      @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+
+  @@index([exceptionId])
+  @@index([uploadedById])
+}
+
+model ReviewNote {
+  id        String       @id @default(cuid())
+  orgId     String
+  authorId  String
+  period    String       // "2026-04"
+  content   String
+  status    String       @default("INTERNAL") // INTERNAL, SHARED_WITH_CLIENT, ACTION_REQUIRED
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  author    User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@index([authorId])
+}
+
+model ProcessingRun {
+  id            String       @id @default(cuid())
+  orgId         String
+  period        String
+  engineVersion String
+  status        String       @default("COMPLETED") // RUNNING, COMPLETED, FAILED
+  statsJson     String       // JSON string of metrics & counts
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  org           Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@index([period])
+}
+
+model Certificate {
+  id                 String              @id @default(cuid())
+  orgId              String
+  publicId           String              @unique
+  level              String              // STANDARD_ASSURANCE, COMPREHENSIVE
+  periodStart        DateTime
+  periodEnd          DateTime
+  status             String              @default("DRAFT") // DRAFT, PENDING_REVIEW, ISSUED, SUPERSEDED, REVOKED
+  scopeJson          String              // JSON string
+  coverageJson       String              // JSON string
+  signedById         String?
+  payloadHash        String?
+  signature          String?
+  signatureMode      String?             // DEVELOPMENT_MODE, QUALIFIED
+  issuedAt           DateTime?
+  version            Int                 @default(1)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  org                Organization        @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  signedBy           User?               @relation(fields: [signedById], references: [id], onDelete: SetNull)
+  disclosureRequests DisclosureRequest[]
+
+  @@index([orgId])
+  @@index([publicId])
+  @@index([signedById])
+}
+
+model DisclosureRequest {
+  id             String       @id @default(cuid())
+  orgId          String
+  certificateId  String
+  requesterEmail String
+  requesterName  String
+  purpose        String
+  status         String       @default("PENDING") // PENDING, APPROVED, REJECTED
+  accessKey      String?
+  expiresAt      DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  org            Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  certificate    Certificate  @relation(fields: [certificateId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@index([certificateId])
+}
+
+model Notification {
+  id        String       @id @default(cuid())
+  orgId     String
+  userId    String
+  title     String
+  message   String
+  type      String       @default("INFO") // INFO, WARNING, SUCCESS, ERROR
+  read      Boolean      @default(false)
+  link      String?
+  createdAt DateTime     @default(now())
+
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@index([userId])
+}
+
+model AuditEvent {
+  id           String       @id @default(cuid())
+  orgId        String
+  actorId      String?
+  action       String       // ORGANIZATION_CREATED, TRANSACTION_IMPORTED, EXCEPTION_CREATED, CERTIFICATE_ISSUED, etc.
+  entityType   String       // Organization, BankTransaction, Exception, Certificate, etc.
+  entityId     String
+  metadataJson String?
+  prevHash     String       // sha256 of preceding event in chain or "GENESIS"
+  hash         String       // sha256(prevHash + actorId + action + entityType + entityId + createdAt)
+  createdAt    DateTime     @default(now())
+
+  org          Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  actor        User?        @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([orgId])
+  @@index([actorId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
