@@ -10,15 +10,16 @@ const config: Config = {
     extend: {
       colors: {
         attest: {
-          bg: "#F7F7F5",
-          ink: "#0B1220",
-          blue: "#2456E6",
-          blueHover: "#1d45bc",
+          bg: "#F7F8FA",
+          ink: "#0F172A",
+          blue: "#2563EB",
+          blueHover: "#1D4ED8",
           amber: "#D97706",
           red: "#DC2626",
+          green: "#16A34A",
           surface: "#FFFFFF",
-          border: "#E5E7EB",
-          muted: "#6B7280",
+          border: "#E6E9EF",
+          muted: "#64748B",
           card: "#FFFFFF",
           sidebar: "#FFFFFF",
         },

@@ -163,14 +163,14 @@ export default function OnboardingWizardPage() {
               onClick={() => setCurrentStep(s.num)}
               className={`p-3 rounded-xl border text-left transition-all text-xs flex flex-col justify-between ${
                 isCurrent
-                  ? "border-[#2456E6] bg-blue-50/40 ring-1 ring-[#2456E6]"
+                  ? "border-[#2563EB] bg-blue-50/40 ring-1 ring-[#2563EB]"
                   : isDone
                   ? "border-emerald-200 bg-emerald-50/30 text-emerald-800"
                   : "border-gray-200 bg-white opacity-70"
               }`}
             >
               <div className="flex items-center justify-between">
-                <Icon className={`w-4 h-4 ${isCurrent ? "text-[#2456E6]" : isDone ? "text-emerald-600" : "text-gray-400"}`} />
+                <Icon className={`w-4 h-4 ${isCurrent ? "text-[#2563EB]" : isDone ? "text-emerald-600" : "text-gray-400"}`} />
                 <span className="font-mono text-[10px] font-bold text-gray-400">0{s.num}</span>
               </div>
               <div className="mt-2 font-semibold text-[#0B1220] truncate">{s.title}</div>
@@ -198,7 +198,7 @@ export default function OnboardingWizardPage() {
                 value={legalName}
                 onChange={(e) => setLegalName(e.target.value)}
                 placeholder="e.g. Meridian Textiles (Pvt) Ltd"
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2456E6]"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
               />
             </div>
 
@@ -215,7 +215,7 @@ export default function OnboardingWizardPage() {
                   value={registrationNumber}
                   onChange={(e) => setRegistrationNumber(e.target.value)}
                   placeholder="e.g. 0094182-LHR"
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2456E6] font-mono"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2563EB] font-mono"
                 />
               </div>
 
@@ -231,7 +231,7 @@ export default function OnboardingWizardPage() {
                   value={taxId}
                   onChange={(e) => setTaxId(e.target.value)}
                   placeholder="e.g. NTN-4892184-7"
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2456E6] font-mono"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2563EB] font-mono"
                 />
               </div>
             </div>
@@ -242,7 +242,7 @@ export default function OnboardingWizardPage() {
                 <select
                   value={jurisdiction}
                   onChange={(e) => setJurisdiction(e.target.value)}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2456E6]"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
                 >
                   <option value="PK">Pakistan (SECP / FBR)</option>
                   <option value="AE">United Arab Emirates (FTA)</option>
@@ -257,7 +257,7 @@ export default function OnboardingWizardPage() {
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
                   placeholder="Lahore"
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2456E6]"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
                 />
               </div>
 
@@ -268,7 +268,7 @@ export default function OnboardingWizardPage() {
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   placeholder="Plot 42, Quaid-e-Azam Industrial Estate"
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2456E6]"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
                 />
               </div>
             </div>
@@ -278,7 +278,7 @@ export default function OnboardingWizardPage() {
                 type="button"
                 onClick={() => saveStep(2)}
                 disabled={saving}
-                className="px-5 py-2.5 rounded-xl bg-[#0B1220] hover:bg-black text-white text-xs font-semibold transition-colors flex items-center gap-1.5"
+                className="px-5 py-2.5 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-sm"
               >
                 <span>Save & Continue to Step 2</span>
                 <ArrowRight className="w-4 h-4" />
@@ -303,7 +303,7 @@ export default function OnboardingWizardPage() {
                 <select
                   value={primaryBank}
                   onChange={(e) => setPrimaryBank(e.target.value)}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2456E6]"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
                 >
                   <option value="Habib Bank Limited (HBL)">Habib Bank Limited (HBL)</option>
                   <option value="Meezan Bank Limited">Meezan Bank Limited</option>
@@ -320,7 +320,7 @@ export default function OnboardingWizardPage() {
                   value={accountNumber}
                   onChange={(e) => setAccountNumber(e.target.value)}
                   placeholder="00427901842003"
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2456E6] font-mono"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2563EB] font-mono"
                 />
               </div>
             </div>
@@ -331,7 +331,7 @@ export default function OnboardingWizardPage() {
                 <select
                   value={accountingSystem}
                   onChange={(e) => setAccountingSystem(e.target.value)}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2456E6]"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
                 >
                   <option value="Excel / Manual Spreadsheets">Excel / Manual Spreadsheets (.xlsx, .csv)</option>
                   <option value="QuickBooks Online / Desktop">QuickBooks (General Ledger Export)</option>
@@ -346,7 +346,7 @@ export default function OnboardingWizardPage() {
                 <select
                   value={statementFrequency}
                   onChange={(e) => setStatementFrequency(e.target.value)}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2456E6]"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
                 >
                   <option value="Monthly">Monthly Assurance Cycle (Default)</option>
                   <option value="Bi-Weekly">Bi-Weekly Reconciliation</option>
@@ -356,7 +356,7 @@ export default function OnboardingWizardPage() {
             </div>
 
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-3.5 text-xs text-blue-900 flex items-start gap-2.5">
-              <Info className="w-4 h-4 text-[#2456E6] shrink-0 mt-0.5" />
+              <Info className="w-4 h-4 text-[#2563EB] shrink-0 mt-0.5" />
               <span>
                 These declared parameters configure the deterministic parsing engine rules for statement file types and account number cross-matching.
               </span>
@@ -375,7 +375,7 @@ export default function OnboardingWizardPage() {
                 type="button"
                 onClick={() => saveStep(3)}
                 disabled={saving}
-                className="px-5 py-2.5 rounded-xl bg-[#0B1220] hover:bg-black text-white text-xs font-semibold transition-colors flex items-center gap-1.5"
+                className="px-5 py-2.5 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-sm"
               >
                 <span>Save & Continue to Step 3</span>
                 <ArrowRight className="w-4 h-4" />
@@ -400,7 +400,7 @@ export default function OnboardingWizardPage() {
                   type="checkbox"
                   checked={consentPrivacy}
                   onChange={(e) => setConsentPrivacy(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#2456E6] focus:ring-[#2456E6]"
+                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#2563EB] focus:ring-[#2563EB]"
                 />
                 <div className="text-xs">
                   <span className="font-semibold text-gray-900 block">Financial Data Protection & Privacy Consent</span>
@@ -415,7 +415,7 @@ export default function OnboardingWizardPage() {
                   type="checkbox"
                   checked={consentAccuracy}
                   onChange={(e) => setConsentAccuracy(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#2456E6] focus:ring-[#2456E6]"
+                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#2563EB] focus:ring-[#2563EB]"
                 />
                 <div className="text-xs">
                   <span className="font-semibold text-gray-900 block">Declaration of Authenticity & Truthfulness</span>
@@ -430,7 +430,7 @@ export default function OnboardingWizardPage() {
                   type="checkbox"
                   checked={consentCAReview}
                   onChange={(e) => setConsentCAReview(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#2456E6] focus:ring-[#2456E6]"
+                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#2563EB] focus:ring-[#2563EB]"
                 />
                 <div className="text-xs">
                   <span className="font-semibold text-gray-900 block">Chartered Accountant Independent Access Authorization</span>
@@ -454,7 +454,7 @@ export default function OnboardingWizardPage() {
                 type="button"
                 disabled={saving || !consentPrivacy || !consentAccuracy || !consentCAReview}
                 onClick={() => saveStep(4, true)}
-                className="px-5 py-2.5 rounded-xl bg-[#0B1220] hover:bg-black text-white text-xs font-semibold transition-colors flex items-center gap-1.5 disabled:opacity-40"
+                className="px-5 py-2.5 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white text-xs font-semibold transition-colors flex items-center gap-1.5 disabled:opacity-40 shadow-sm"
               >
                 <span>Authorize & View Readiness</span>
                 <ArrowRight className="w-4 h-4" />
@@ -510,7 +510,7 @@ export default function OnboardingWizardPage() {
               </button>
               <Link
                 href="/portal/sources"
-                className="px-5 py-2.5 rounded-xl bg-[#2456E6] hover:bg-[#1d45bc] text-white text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-sm"
+                className="px-5 py-2.5 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-sm"
               >
                 <span>Proceed to Source Upload Workspace</span>
                 <ArrowRight className="w-4 h-4" />

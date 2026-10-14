@@ -3,26 +3,28 @@
 @tailwind utilities;
 
 :root {
-  --bg-primary: #F7F7F5;
-  --text-primary: #0B1220;
-  --accent-verified: #2456E6;
-  --accent-warning: #D97706;
-  --accent-failure: #DC2626;
+  --bg-primary: #F7F8FA;
   --surface-card: #FFFFFF;
-  --border-subtle: #E5E7EB;
+  --border-subtle: #E6E9EF;
+  --text-primary: #0F172A;
+  --text-muted: #64748B;
+  --accent-primary: #2563EB;
+  --semantic-green: #16A34A;
+  --semantic-amber: #D97706;
+  --semantic-red: #DC2626;
 }
 
 body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
-  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   min-height: 100vh;
 }
 
 /* Tabular figures for monospace numbers */
 .num-mono, .font-mono {
-  font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  font-family: var(--font-ibm-plex-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
   font-variant-numeric: tabular-nums;
 }
 

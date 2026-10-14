@@ -7,12 +7,16 @@ import {
   FileCheck2,
   ArrowUpRight,
   CheckCircle2,
-  Clock,
   ChevronRight,
   TrendingUp,
+  Award,
+  AlertOctagon,
+  Clock,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { formatPaise } from "@/lib/money";
+import { formatEnumLabel } from "@/lib/labels";
+import { StatusPill } from "@/components/ui/StatusPill";
 import { VerificationTrigger } from "./verification-trigger";
 
 export default async function PortalDashboardPage() {
@@ -25,7 +29,7 @@ export default async function PortalDashboardPage() {
         orderBy: { date: "asc" },
       },
       exceptions: {
-        where: { status: "OPEN" },
+        orderBy: { severity: "asc" },
       },
       certificates: {
         take: 1,
@@ -39,225 +43,260 @@ export default async function PortalDashboardPage() {
   });
 
   const transactions = org?.bankTransactions || [];
-  const exceptions = org?.exceptions || [];
+  const allExceptions = org?.exceptions || [];
+  const openExceptions = allExceptions.filter((e) => e.status === "OPEN");
   const certificate = org?.certificates[0];
-  const totalVolume = transactions.reduce((acc, tx) => acc + tx.debitPaise + tx.creditPaise, 0);
   const matchedCount = transactions.filter((t) => t.matchStatus === "MATCHED").length;
   const matchRate = transactions.length > 0 ? Math.round((matchedCount / transactions.length) * 100) : 0;
   const latestBalance = transactions[transactions.length - 1]?.runningBalancePaise ?? 80000000;
 
   return (
-    <div className="space-y-8">
-      {/* Page Title & Status Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-[#0B1220]">Assurance Overview</h1>
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              Engine Active
-            </span>
-          </div>
-          <p className="text-xs text-gray-500 mt-1">
-            Continuous reconciliation for period <span className="font-semibold text-gray-700">April 2026</span> &bull; Deterministic verification rule set active
+          <h1 className="text-[28px] font-extrabold tracking-tight text-[#0F172A] leading-tight">
+            Assurance Overview
+          </h1>
+          <p className="text-xs text-[#64748B] mt-1">
+            Continuous reconciliation for <span className="font-semibold text-[#0F172A]">April 2026</span> &bull; Deterministic verification rule set active
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           <Link
             href="/portal/exceptions"
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-medium shadow-sm transition-colors"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-semibold shadow-sm transition-colors"
           >
-            <AlertTriangle className="w-4 h-4" />
-            Resolve 2 Exceptions
+            <AlertTriangle className="w-3.5 h-3.5" />
+            <span>Resolve {openExceptions.length} Exceptions</span>
           </Link>
           <Link
             href="/portal/certificate"
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white border border-gray-300 hover:bg-gray-50 text-xs font-medium text-gray-700 shadow-sm transition-colors"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white border border-[#E6E9EF] hover:bg-slate-50 text-xs font-semibold text-[#0F172A] shadow-sm transition-colors"
           >
-            <ShieldCheck className="w-4 h-4 text-[#2456E6]" />
-            View Certificate Preview
+            <ShieldCheck className="w-3.5 h-3.5 text-[#2563EB]" />
+            <span>Certificate Preview</span>
           </Link>
         </div>
       </div>
 
-      {/* Verification Trigger Banner */}
-      <VerificationTrigger />
-
-      {/* KPI Cards */}
+      {/* Hero Row: 4 Redesigned Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Verified Balance */}
-        <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between text-xs text-gray-500 font-medium">
-            <span>Verified Closing Balance</span>
-            <TrendingUp className="w-4 h-4 text-[#2456E6]" />
+        {/* Card 1: Verified Closing Balance */}
+        <div className="bg-white p-5 rounded-xl border border-[#E6E9EF] shadow-sm flex items-start gap-4">
+          <div className="w-11 h-11 rounded-xl bg-blue-50 text-[#2563EB] flex items-center justify-center shrink-0">
+            <TrendingUp className="w-5 h-5" />
           </div>
-          <div className="mt-3">
-            <div className="text-2xl font-bold font-mono text-[#0B1220]">
+          <div className="min-w-0 flex-1">
+            <span className="text-xs font-semibold text-[#64748B] uppercase tracking-wider block">
+              Verified Closing Balance
+            </span>
+            <div className="text-[30px] font-bold font-mono tracking-tight text-[#0F172A] tabular-nums mt-1 truncate leading-none">
               {formatPaise(latestBalance)}
             </div>
-            <div className="text-[11px] text-gray-500 mt-1 flex items-center gap-1">
+            <div className="text-[11.5px] text-[#64748B] mt-2 flex items-center gap-1">
               <span>Opening:</span>
-              <span className="font-mono">{formatPaise(80000000)}</span>
-              <span className="text-emerald-600 font-semibold">(Verified ✓)</span>
+              <span className="font-mono text-[#0F172A] font-semibold">{formatPaise(80000000)}</span>
+              <span className="text-[#16A34A] font-bold">✓</span>
             </div>
           </div>
         </div>
 
-        {/* Reconciliation Rate */}
-        <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between text-xs text-gray-500 font-medium">
-            <span>Deterministic Match Rate</span>
-            <ReceiptText className="w-4 h-4 text-emerald-600" />
+        {/* Card 2: Deterministic Match Rate */}
+        <div className="bg-white p-5 rounded-xl border border-[#E6E9EF] shadow-sm flex items-start gap-4">
+          <div className="w-11 h-11 rounded-xl bg-emerald-50 text-[#16A34A] flex items-center justify-center shrink-0">
+            <ReceiptText className="w-5 h-5" />
           </div>
-          <div className="mt-3">
-            <div className="text-2xl font-bold font-mono text-[#0B1220]">
+          <div className="min-w-0 flex-1">
+            <span className="text-xs font-semibold text-[#64748B] uppercase tracking-wider block">
+              Reconciliation Rate
+            </span>
+            <div className="text-[30px] font-bold font-mono tracking-tight text-[#0F172A] tabular-nums mt-1 leading-none">
               {matchRate}%
             </div>
-            <div className="text-[11px] text-gray-500 mt-1">
-              {matchedCount} of {transactions.length} transactions matched
+            <div className="text-[11.5px] text-[#64748B] mt-2">
+              <span className="font-semibold text-[#0F172A]">{matchedCount} of {transactions.length}</span> matched
             </div>
           </div>
         </div>
 
-        {/* Exceptions Pending Resolution */}
-        <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between text-xs text-gray-500 font-medium">
-            <span>Actionable Exceptions</span>
-            <AlertTriangle className="w-4 h-4 text-amber-500" />
+        {/* Card 3: Actionable Exceptions */}
+        <div className="bg-white p-5 rounded-xl border border-[#E6E9EF] shadow-sm flex items-start gap-4">
+          <div className="w-11 h-11 rounded-xl bg-amber-50 text-[#D97706] flex items-center justify-center shrink-0">
+            <AlertTriangle className="w-5 h-5" />
           </div>
-          <div className="mt-3">
-            <div className="text-2xl font-bold font-mono text-amber-600">
-              {exceptions.length}
-            </div>
-            <div className="text-[11px] text-amber-700 font-medium mt-1">
-              Requires client evidence / explanation
-            </div>
-          </div>
-        </div>
-
-        {/* Assurance Certificate Status */}
-        <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between text-xs text-gray-500 font-medium">
-            <span>Assurance Status</span>
-            <FileCheck2 className="w-4 h-4 text-[#2456E6]" />
-          </div>
-          <div className="mt-3">
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200">
-              <Clock className="w-3.5 h-3.5" />
-              {certificate?.status || "PENDING_REVIEW"}
+          <div className="min-w-0 flex-1">
+            <span className="text-xs font-semibold text-[#64748B] uppercase tracking-wider block">
+              Open Exceptions
             </span>
-            <div className="text-[11px] text-gray-500 mt-2 font-mono truncate">
-              ID: {certificate?.publicId}
+            <div className="text-[30px] font-bold font-mono tracking-tight text-[#D97706] tabular-nums mt-1 leading-none">
+              {openExceptions.length}
+            </div>
+            <div className="text-[11.5px] text-[#D97706] font-medium mt-2">
+              Requires client corroboration
+            </div>
+          </div>
+        </div>
+
+        {/* Card 4: Verification Level */}
+        <div className="bg-white p-5 rounded-xl border border-[#E6E9EF] shadow-sm flex items-start gap-4">
+          <div className="w-11 h-11 rounded-xl bg-blue-50 text-[#2563EB] flex items-center justify-center shrink-0">
+            <Award className="w-5 h-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <span className="text-xs font-semibold text-[#64748B] uppercase tracking-wider block">
+              Assurance Level
+            </span>
+            <div className="text-[26px] font-bold tracking-tight text-[#0F172A] mt-1 leading-none truncate">
+              Level 1
+            </div>
+            <div className="text-[11.5px] text-[#64748B] mt-2">
+              Eligible for <strong className="text-[#2563EB]">Level 3</strong> with invoices
             </div>
           </div>
         </div>
       </div>
 
-      {/* Exceptions Alert Box */}
-      {exceptions.length > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 shadow-sm">
-          <div className="flex items-start justify-between">
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-700 shrink-0">
-                <AlertTriangle className="w-5 h-5 text-amber-600" />
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-amber-900">
-                  {exceptions.length} Financial Exceptions Require Your Resolution
-                </h3>
-                <p className="text-xs text-amber-800 mt-1">
-                  The deterministic engine identified discrepancies between the uploaded HBL bank statement and the general ledger. A licensed CA cannot issue the signed Trust Certificate until these items are addressed.
-                </p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {exceptions.map((exc) => (
-                    <div
-                      key={exc.id}
-                      className="bg-white/90 border border-amber-300 rounded-lg px-3 py-1.5 text-xs text-amber-900 flex items-center gap-2"
-                    >
-                      <span className="font-bold uppercase text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">
-                        {exc.type}
-                      </span>
-                      <span className="font-medium truncate max-w-xs">{exc.title}</span>
-                      <span className="font-mono font-semibold">{formatPaise(exc.amountPaise)}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+      {/* Verification Trigger Card (With 6-Stage Pipeline Animation) */}
+      <VerificationTrigger />
+
+      {/* Redesigned Exceptions Block: Clean Single Card with Row List Items */}
+      {openExceptions.length > 0 && (
+        <div className="bg-white border border-[#E6E9EF] rounded-xl overflow-hidden shadow-sm">
+          <div className="p-4 sm:px-6 border-b border-[#E6E9EF] flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-bold text-[#0F172A]">
+                Actionable Exceptions Requiring Resolution
+              </h2>
+              <p className="text-xs text-[#64748B] mt-0.5">
+                The deterministic engine detected financial variances between bank records and books. Click an item to provide corroborating evidence.
+              </p>
             </div>
             <Link
               href="/portal/exceptions"
-              className="text-xs font-semibold text-amber-900 hover:text-black flex items-center gap-1 shrink-0 bg-amber-100 hover:bg-amber-200 px-3 py-1.5 rounded-lg transition-colors"
+              className="text-xs font-semibold text-[#2563EB] hover:underline flex items-center gap-1 shrink-0"
             >
-              Resolve Desk <ChevronRight className="w-4 h-4" />
+              <span>View Resolution Desk</span>
+              <ChevronRight className="w-4 h-4" />
             </Link>
+          </div>
+
+          <div className="divide-y divide-[#E6E9EF]">
+            {openExceptions.map((exc) => {
+              const isCritical = exc.severity === "CRITICAL";
+              const isHigh = exc.severity === "HIGH";
+
+              return (
+                <Link
+                  key={exc.id}
+                  href={`/portal/exceptions`}
+                  className="p-4 sm:px-6 flex items-start sm:items-center justify-between gap-4 hover:bg-[#F7F8FA] transition-colors group cursor-pointer"
+                >
+                  <div className="flex items-start gap-3.5 min-w-0">
+                    <div
+                      className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 mt-0.5 sm:mt-0 ${
+                        isCritical
+                          ? "bg-red-50 text-[#DC2626]"
+                          : isHigh
+                          ? "bg-amber-50 text-[#D97706]"
+                          : "bg-blue-50 text-[#2563EB]"
+                      }`}
+                    >
+                      {isCritical ? (
+                        <AlertOctagon className="w-5 h-5" />
+                      ) : (
+                        <AlertTriangle className="w-5 h-5" />
+                      )}
+                    </div>
+
+                    <div className="min-w-0 space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-[15px] font-semibold text-[#0F172A] group-hover:text-[#2563EB] transition-colors">
+                          {exc.title}
+                        </span>
+                        <StatusPill status={exc.severity} size="xs" />
+                      </div>
+                      <p className="text-xs text-[#64748B] line-clamp-2 leading-relaxed">
+                        {exc.explanation}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4 shrink-0 pl-2">
+                    <div className="text-right">
+                      <div className="text-base font-bold font-mono text-[#0F172A] tabular-nums">
+                        {formatPaise(exc.amountPaise)}
+                      </div>
+                      <div className="mt-0.5">
+                        <StatusPill status={exc.status} size="xs" />
+                      </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-[#2563EB] transition-colors" />
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </div>
       )}
 
-      {/* Recent Bank Transactions Table Preview */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-        <div className="p-4 sm:px-6 border-b border-gray-200 flex items-center justify-between">
+      {/* Bank Statement Reconciliation Preview */}
+      <div className="bg-white border border-[#E6E9EF] rounded-xl overflow-hidden shadow-sm">
+        <div className="p-4 sm:px-6 border-b border-[#E6E9EF] flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-bold text-[#0B1220]">Bank Statement Reconciliation Preview</h2>
-            <p className="text-xs text-gray-500">
-              Habib Bank Limited &bull; Account #00427901842003 &bull; April 2026
+            <h2 className="text-lg font-bold text-[#0F172A]">
+              Bank Statement Reconciliation Preview
+            </h2>
+            <p className="text-xs text-[#64748B] mt-0.5">
+              Habib Bank Limited &bull; Account #00427901842003 &bull; Period 2026-04
             </p>
           </div>
           <Link
             href="/portal/transactions"
-            className="text-xs font-semibold text-[#2456E6] hover:underline flex items-center gap-1"
+            className="text-xs font-semibold text-[#2563EB] hover:underline flex items-center gap-1"
           >
-            View all 8 transactions <ArrowUpRight className="w-3.5 h-3.5" />
+            <span>View all transactions</span>
+            <ArrowUpRight className="w-3.5 h-3.5" />
           </Link>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-[#F7F7F5] text-gray-600 font-semibold border-b border-gray-200">
+            <thead className="bg-[#F7F8FA] text-[#64748B] font-semibold border-b border-[#E6E9EF]">
               <tr>
-                <th className="py-2.5 px-4">Date</th>
-                <th className="py-2.5 px-4">Description</th>
-                <th className="py-2.5 px-4">Counterparty / Ref</th>
-                <th className="py-2.5 px-4 text-right">Debit</th>
-                <th className="py-2.5 px-4 text-right">Credit</th>
-                <th className="py-2.5 px-4 text-right">Running Balance</th>
-                <th className="py-2.5 px-4 text-center">Status</th>
+                <th className="py-3 px-4">Date</th>
+                <th className="py-3 px-4">Description</th>
+                <th className="py-3 px-4">Counterparty / Ref</th>
+                <th className="py-3 px-4 text-right">Debit</th>
+                <th className="py-3 px-4 text-right">Credit</th>
+                <th className="py-3 px-4 text-right">Running Balance</th>
+                <th className="py-3 px-4 text-center">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-[#E6E9EF]">
               {transactions.map((tx) => (
-                <tr key={tx.id} className="hover:bg-gray-50/70 transition-colors">
-                  <td className="py-2.5 px-4 font-mono text-gray-600 whitespace-nowrap">
+                <tr key={tx.id} className="hover:bg-slate-50/70 transition-colors">
+                  <td className="py-3 px-4 font-mono text-[#64748B] whitespace-nowrap">
                     {tx.date.toISOString().split("T")[0]}
                   </td>
-                  <td className="py-2.5 px-4 font-medium text-[#0B1220]">
+                  <td className="py-3 px-4 font-semibold text-[#0F172A]">
                     {tx.description}
                   </td>
-                  <td className="py-2.5 px-4 text-gray-500 font-mono text-[11px]">
+                  <td className="py-3 px-4 text-[#64748B] font-mono text-[11px]">
                     {tx.counterparty || "—"} {tx.ref && `(${tx.ref})`}
                   </td>
-                  <td className="py-2.5 px-4 text-right font-mono font-medium text-gray-900">
+                  <td className="py-3 px-4 text-right font-mono font-medium text-[#0F172A]">
                     {tx.debitPaise > 0 ? formatPaise(tx.debitPaise) : "—"}
                   </td>
-                  <td className="py-2.5 px-4 text-right font-mono font-medium text-emerald-700">
+                  <td className="py-3 px-4 text-right font-mono font-medium text-[#16A34A]">
                     {tx.creditPaise > 0 ? formatPaise(tx.creditPaise) : "—"}
                   </td>
-                  <td className="py-2.5 px-4 text-right font-mono font-semibold text-[#0B1220]">
+                  <td className="py-3 px-4 text-right font-mono font-bold text-[#0F172A]">
                     {formatPaise(tx.runningBalancePaise)}
                   </td>
-                  <td className="py-2.5 px-4 text-center">
-                    {tx.matchStatus === "MATCHED" ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        <CheckCircle2 className="w-3 h-3" />
-                        Matched
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                        <AlertTriangle className="w-3 h-3" />
-                        Exception
-                      </span>
-                    )}
+                  <td className="py-3 px-4 text-center">
+                    <StatusPill status={tx.matchStatus} size="xs" />
                   </td>
                 </tr>
               ))}

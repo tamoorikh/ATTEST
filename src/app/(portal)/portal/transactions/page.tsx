@@ -65,41 +65,41 @@ export default async function TransactionsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-[#0B1220]">
+          <h1 className="text-[28px] font-extrabold tracking-tight text-[#0F172A]">
             Bank Statement Transactions Explorer
           </h1>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-[#64748B] mt-1">
             Habib Bank Limited (HBL) &bull; Acct: 00427901842003 &bull; Period: April 2026
           </p>
         </div>
 
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-xs font-medium text-emerald-800">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-800">
           <Calculator className="w-4 h-4 text-emerald-600" />
           <span>Continuous Arithmetic Integrity: 100% Validated</span>
         </div>
       </div>
 
       {/* Statement Reconciliation Arithmetic Strip */}
-      <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm grid grid-cols-2 md:grid-cols-5 gap-4 text-xs">
+      <div className="bg-white border border-[#E6E9EF] rounded-xl p-4 shadow-sm grid grid-cols-2 md:grid-cols-5 gap-4 text-xs">
         <div>
-          <span className="text-gray-500 block">Statement Opening</span>
-          <span className="font-mono text-sm font-bold text-gray-900">{formatPaise(openingBalance)}</span>
+          <span className="text-[#64748B] block text-[11px]">Statement Opening</span>
+          <span className="font-mono text-sm font-bold text-[#0F172A] mt-0.5 block tabular-nums">{formatPaise(openingBalance)}</span>
         </div>
         <div>
-          <span className="text-gray-500 block">Total Debits (-)</span>
-          <span className="font-mono text-sm font-bold text-red-600">-{formatPaise(totalDebits)}</span>
+          <span className="text-[#64748B] block text-[11px]">Total Debits (-)</span>
+          <span className="font-mono text-sm font-bold text-red-600 mt-0.5 block tabular-nums">-{formatPaise(totalDebits)}</span>
         </div>
         <div>
-          <span className="text-gray-500 block">Total Credits (+)</span>
-          <span className="font-mono text-sm font-bold text-emerald-700">+{formatPaise(totalCredits)}</span>
+          <span className="text-[#64748B] block text-[11px]">Total Credits (+)</span>
+          <span className="font-mono text-sm font-bold text-emerald-700 mt-0.5 block tabular-nums">+{formatPaise(totalCredits)}</span>
         </div>
         <div>
-          <span className="text-gray-500 block">Net Periodic Flow</span>
-          <span className="font-mono text-sm font-bold text-[#0B1220]">{formatPaise(totalCredits - totalDebits)}</span>
+          <span className="text-[#64748B] block text-[11px]">Net Periodic Flow</span>
+          <span className="font-mono text-sm font-bold text-[#0F172A] mt-0.5 block tabular-nums">{formatPaise(totalCredits - totalDebits)}</span>
         </div>
         <div>
-          <span className="text-gray-500 block">Verified Closing</span>
-          <span className="font-mono text-sm font-bold text-[#2456E6]">{formatPaise(calculatedClosing)}</span>
+          <span className="text-[#64748B] block text-[11px]">Verified Closing</span>
+          <span className="font-mono text-sm font-bold text-[#2563EB] mt-0.5 block tabular-nums">{formatPaise(calculatedClosing)}</span>
         </div>
       </div>
 

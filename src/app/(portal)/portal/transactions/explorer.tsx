@@ -18,6 +18,9 @@ import {
   Loader2,
 } from "lucide-react";
 import { formatPaise } from "@/lib/money";
+import { formatShortHash, formatEnumLabel } from "@/lib/labels";
+import { CopyButton } from "@/components/ui/CopyButton";
+import { StatusPill } from "@/components/ui/StatusPill";
 
 interface TransactionItem {
   id: string;
@@ -173,7 +176,7 @@ export function TransactionExplorer({
               setPage(1);
             }}
             placeholder="Search description, counterparty, or reference..."
-            className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-[#2456E6]"
+            className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
           />
           {search && (
             <button
@@ -194,7 +197,7 @@ export function TransactionExplorer({
                 setStatusFilter(e.target.value);
                 setPage(1);
               }}
-              className="px-2.5 py-1.5 border border-gray-300 rounded-lg bg-white text-xs focus:outline-none focus:ring-2 focus:ring-[#2456E6]"
+              className="px-2.5 py-1.5 border border-gray-300 rounded-lg bg-white text-xs focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
             >
               <option value="ALL">All ({transactions.length})</option>
               <option value="MATCHED">Matched</option>
@@ -211,7 +214,7 @@ export function TransactionExplorer({
                 setCategoryFilter(e.target.value);
                 setPage(1);
               }}
-              className="px-2.5 py-1.5 border border-gray-300 rounded-lg bg-white text-xs focus:outline-none focus:ring-2 focus:ring-[#2456E6]"
+              className="px-2.5 py-1.5 border border-gray-300 rounded-lg bg-white text-xs focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
             >
               <option value="ALL">All Categories</option>
               {categories.map((c) => (
@@ -282,17 +285,7 @@ export function TransactionExplorer({
                       </span>
                     </td>
                     <td className="py-3 px-4 text-center">
-                      {tx.matchStatus === "MATCHED" ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                          <CheckCircle2 className="w-3 h-3" />
-                          Matched
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                          <AlertTriangle className="w-3 h-3" />
-                          Exception
-                        </span>
-                      )}
+                      <StatusPill rawValue={tx.matchStatus} type="match" />
                     </td>
                   </tr>
                 ))
@@ -376,33 +369,42 @@ export function TransactionExplorer({
                 </div>
                 <div>
                   <span className="text-gray-400 block text-[10px] uppercase">Running Balance</span>
-                  <span className="font-mono font-bold text-[#2456E6]">
+                  <span className="font-mono font-bold text-[#2563EB]">
                     {formatPaise(selectedTx.runningBalancePaise)}
                   </span>
                 </div>
               </div>
 
               {/* Source Document Provenance */}
-              <div className="border border-gray-200 rounded-xl p-4 text-xs space-y-2">
-                <span className="font-bold text-[#0B1220] flex items-center gap-1.5">
-                  <FileText className="w-4 h-4 text-gray-500" />
+              <div className="border border-[#E6E9EF] rounded-xl p-4 text-xs space-y-2 bg-[#F7F8FA]">
+                <span className="font-bold text-[#0F172A] flex items-center gap-1.5">
+                  <FileText className="w-4 h-4 text-[#2563EB]" />
                   Source Document Provenance
                 </span>
-                <div className="space-y-1 text-gray-600">
+                <div className="space-y-1.5 text-[#64748B]">
                   <div>
-                    <span className="text-gray-400">Ingested File:</span>{" "}
-                    <span className="font-semibold text-gray-800">
+                    <span className="text-[#64748B]">Ingested File:</span>{" "}
+                    <span className="font-semibold text-[#0F172A]">
                       {selectedTx.sourceDocument?.filename || "HBL_Statement_April_2026.pdf"}
                     </span>
                   </div>
-                  <div>
-                    <span className="text-gray-400">SHA-256 Hash:</span>{" "}
-                    <span className="font-mono text-[10px] text-gray-700 bg-gray-50 p-1 rounded border border-gray-200 block truncate">
-                      {selectedTx.sourceDocument?.sha256 || "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"}
-                    </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#64748B]">SHA-256 Hash:</span>{" "}
+                    <div className="inline-flex items-center gap-1.5 bg-white px-2 py-0.5 rounded border border-[#E6E9EF]">
+                      <span className="font-mono font-semibold text-xs text-[#2563EB]">
+                        {formatShortHash(
+                          selectedTx.sourceDocument?.sha256 || "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                          8
+                        )}
+                      </span>
+                      <CopyButton
+                        value={selectedTx.sourceDocument?.sha256 || "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"}
+                        label="Copy source document hash"
+                      />
+                    </div>
                   </div>
                   <div className="flex items-center gap-2 pt-1 text-[11px]">
-                    <span className="px-2 py-0.5 rounded bg-blue-50 text-[#2456E6] border border-blue-200 font-bold uppercase text-[10px]">
+                    <span className="px-2 py-0.5 rounded bg-blue-50 text-[#2563EB] border border-blue-200 font-bold uppercase text-[10px]">
                       {selectedTx.sourceDocument?.tier || "PRIMARY"} TIER
                     </span>
                     <span className="text-emerald-700 font-semibold flex items-center gap-1">
@@ -414,13 +416,13 @@ export function TransactionExplorer({
               </div>
 
               {/* Manual Category Override with Mandatory Reason */}
-              <div className="border border-gray-200 rounded-xl p-4 space-y-3 text-xs bg-white">
+              <div className="border border-[#E6E9EF] rounded-xl p-4 space-y-3 text-xs bg-white">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-[#0B1220] flex items-center gap-1.5">
-                    <Edit3 className="w-4 h-4 text-blue-600" />
+                  <span className="font-bold text-[#0F172A] flex items-center gap-1.5">
+                    <Edit3 className="w-4 h-4 text-[#2563EB]" />
                     Manual Category Override
                   </span>
-                  <span className="text-[10px] font-mono text-gray-400">Requires Mandatory Reason</span>
+                  <span className="text-[10px] font-mono text-[#64748B]">Requires Mandatory Reason</span>
                 </div>
 
                 {categoryError && (
@@ -436,18 +438,18 @@ export function TransactionExplorer({
                 )}
 
                 {selectedTx.originalCategory && (
-                  <div className="text-[11px] text-gray-500 bg-gray-50 p-2 rounded">
+                  <div className="text-[11px] text-[#64748B] bg-[#F7F8FA] p-2 rounded border border-[#E6E9EF]">
                     Original Extraction: <strong>{selectedTx.originalCategory}</strong>
                   </div>
                 )}
 
                 <form onSubmit={handleUpdateCategory} className="space-y-3">
                   <div>
-                    <label className="block text-gray-700 font-semibold mb-1">New Category</label>
+                    <label className="block text-[#0F172A] font-semibold mb-1">New Category</label>
                     <select
                       value={newCategory}
                       onChange={(e) => setNewCategory(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-[#2456E6]"
+                      className="w-full px-3 py-2 border border-[#E6E9EF] rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
                     >
                       <option value="Payroll">Payroll</option>
                       <option value="Revenue">Revenue</option>
@@ -462,10 +464,10 @@ export function TransactionExplorer({
 
                   <div>
                     <div className="flex items-center justify-between mb-1">
-                      <label className="block text-gray-700 font-semibold">
+                      <label className="block text-[#0F172A] font-semibold">
                         Mandatory Justification Reason <span className="text-red-500">*</span>
                       </label>
-                      <span className="text-[10px] text-gray-400">Min 5 characters</span>
+                      <span className="text-[10px] text-[#64748B]">Min 5 characters</span>
                     </div>
                     <textarea
                       required
@@ -474,14 +476,14 @@ export function TransactionExplorer({
                       value={reason}
                       onChange={(e) => setReason(e.target.value)}
                       placeholder="e.g. Reclassified from vendor deposit to raw yarn procurement per invoice #ZT-1141."
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-[#2456E6]"
+                      className="w-full px-3 py-2 border border-[#E6E9EF] rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
                     />
                   </div>
 
                   <button
                     type="submit"
                     disabled={savingCategory || reason.trim().length < 5}
-                    className="w-full py-2 px-4 rounded-xl bg-[#0B1220] hover:bg-black text-white font-semibold transition-colors flex items-center justify-center gap-1.5 disabled:opacity-40"
+                    className="w-full py-2.5 px-4 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white font-semibold transition-colors flex items-center justify-center gap-1.5 disabled:opacity-40 shadow-sm"
                   >
                     {savingCategory ? (
                       <>
@@ -489,7 +491,7 @@ export function TransactionExplorer({
                         <span>Updating Audit Chain...</span>
                       </>
                     ) : (
-                      <span>Apply Category Correction & Record Audit Event</span>
+                      <span>Apply Category Correction &amp; Record Audit Event</span>
                     )}
                   </button>
                 </form>

@@ -12,6 +12,8 @@ import {
   ShieldAlert,
   Loader2,
 } from "lucide-react";
+import { formatEnumLabel } from "@/lib/labels";
+import { StatusPill } from "@/components/ui/StatusPill";
 
 export function SourceUploadClient() {
   const router = useRouter();
@@ -66,13 +68,13 @@ export function SourceUploadClient() {
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
-      <div className="border-b border-gray-100 pb-4">
-        <h2 className="text-base font-bold text-[#0B1220] flex items-center gap-2">
-          <UploadCloud className="w-5 h-5 text-[#2456E6]" />
+    <div className="bg-white border border-[#E6E9EF] rounded-xl p-6 shadow-sm space-y-6">
+      <div className="border-b border-[#E6E9EF] pb-4">
+        <h2 className="text-base font-bold text-[#0F172A] flex items-center gap-2">
+          <UploadCloud className="w-5 h-5 text-[#2563EB]" />
           Upload Financial Source Document
         </h2>
-        <p className="text-xs text-gray-500 mt-1">
+        <p className="text-xs text-[#64748B] mt-1">
           Direct ingestion with cryptographic SHA-256 hashing, duplicate prevention, and deterministic reconciliation.
         </p>
       </div>
@@ -102,13 +104,16 @@ export function SourceUploadClient() {
           ) : (
             <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
           )}
-          <div className="space-y-1">
-            <span className="font-bold block">
-              {result.parseStatus === "NEEDS_OCR" ? "Document Status: NEEDS_OCR" : "Document Successfully Ingested"}
-            </span>
+          <div className="space-y-1 flex-1">
+            <div className="flex items-center justify-between">
+              <span className="font-bold block">
+                {result.parseStatus === "NEEDS_OCR" ? "Requires OCR Processing" : "Document Successfully Ingested"}
+              </span>
+              <StatusPill rawValue={result.parseStatus} type="status" />
+            </div>
             <p className="leading-relaxed">
               {result.message ||
-                `File "${result.document?.filename}" processed. SHA-256: ${result.document?.sha256?.substring(0, 16)}...`}
+                `File "${result.document?.filename}" processed and indexed.`}
             </p>
             {result.validationResult && (
               <div className="mt-2 font-mono text-[11px] space-y-0.5 text-gray-700">
@@ -133,37 +138,37 @@ export function SourceUploadClient() {
       <form onSubmit={handleUpload} className="space-y-5">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-gray-700">Document Type</label>
+            <label className="block text-xs font-semibold text-[#0F172A]">Document Type</label>
             <select
               value={type}
               onChange={(e) => setType(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2456E6]"
+              className="mt-1 block w-full px-3 py-2 border border-[#E6E9EF] rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
             >
-              <option value="BANK_STATEMENT">Bank Statement (.pdf, .csv) — PRIMARY</option>
-              <option value="LEDGER">General Ledger Book (.csv) — SECONDARY</option>
-              <option value="INVOICE_REGISTER">Sales / Invoice Register (.csv) — CORROBORATING</option>
+              <option value="BANK_STATEMENT">Bank Statement (.pdf, .csv) — Primary Tier</option>
+              <option value="LEDGER">General Ledger Book (.csv) — Secondary Tier</option>
+              <option value="INVOICE_REGISTER">Sales / Invoice Register (.csv) — Corroborating Tier</option>
             </select>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-700">Statement Period</label>
+            <label className="block text-xs font-semibold text-[#0F172A]">Statement Period</label>
             <input
               type="text"
               value={period}
               onChange={(e) => setPeriod(e.target.value)}
               placeholder="YYYY-MM (e.g. 2026-04)"
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2456E6] font-mono"
+              className="mt-1 block w-full px-3 py-2 border border-[#E6E9EF] rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-[#2563EB] font-mono"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-700">Stated Opening Balance (PKR)</label>
+            <label className="block text-xs font-semibold text-[#0F172A]">Stated Opening Balance (PKR)</label>
             <input
               type="text"
               value={openingBalance}
               onChange={(e) => setOpeningBalance(e.target.value)}
               placeholder="800,000.00"
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2456E6] font-mono"
+              className="mt-1 block w-full px-3 py-2 border border-[#E6E9EF] rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-[#2563EB] font-mono"
             />
           </div>
         </div>
@@ -171,15 +176,15 @@ export function SourceUploadClient() {
         {type === "BANK_STATEMENT" && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-gray-700">Stated Closing Balance (PKR)</label>
+              <label className="block text-xs font-semibold text-[#0F172A]">Stated Closing Balance (PKR)</label>
               <input
                 type="text"
                 value={closingBalance}
                 onChange={(e) => setClosingBalance(e.target.value)}
                 placeholder="1,636,500.00"
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2456E6] font-mono"
+                className="mt-1 block w-full px-3 py-2 border border-[#E6E9EF] rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-[#2563EB] font-mono"
               />
-              <span className="text-[10px] text-gray-400 mt-0.5 block">
+              <span className="text-[10px] text-[#64748B] mt-0.5 block">
                 Used for R1 statement balance reconciliation check (tolerance 0 paisa).
               </span>
             </div>
@@ -187,7 +192,7 @@ export function SourceUploadClient() {
         )}
 
         {/* File Picker */}
-        <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-gray-400 transition-colors bg-gray-50/50">
+        <div className="border-2 border-dashed border-[#E6E9EF] rounded-xl p-6 text-center hover:border-blue-400 transition-colors bg-[#F7F8FA]">
           <input
             type="file"
             id="fileInput"
@@ -200,11 +205,11 @@ export function SourceUploadClient() {
             className="hidden"
           />
           <label htmlFor="fileInput" className="cursor-pointer flex flex-col items-center">
-            <UploadCloud className="w-8 h-8 text-gray-400 mb-2" />
-            <span className="text-xs font-semibold text-[#0B1220]">
+            <UploadCloud className="w-8 h-8 text-[#64748B] mb-2" />
+            <span className="text-xs font-semibold text-[#0F172A]">
               {file ? file.name : "Click to select or drag and drop financial file"}
             </span>
-            <span className="text-[11px] text-gray-500 mt-1">
+            <span className="text-[11px] text-[#64748B] mt-1">
               Supports .csv and .pdf bank statements (max 15MB)
             </span>
             {file && (
@@ -219,16 +224,16 @@ export function SourceUploadClient() {
           <button
             type="submit"
             disabled={uploading || !file}
-            className="px-6 py-2.5 rounded-xl bg-[#0B1220] hover:bg-black text-white text-xs font-semibold disabled:opacity-40 transition-colors flex items-center gap-2 shadow-sm"
+            className="px-6 py-2.5 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white text-xs font-semibold disabled:opacity-40 transition-colors flex items-center gap-2 shadow-sm"
           >
             {uploading ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Hashing & Validating...</span>
+                <span>Hashing &amp; Validating...</span>
               </>
             ) : (
               <>
-                <span>Upload & Run Deterministic Validation</span>
+                <span>Upload &amp; Run Deterministic Validation</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}

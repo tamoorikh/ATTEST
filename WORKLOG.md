@@ -380,4 +380,120 @@ All 17 required acceptance specifications implemented and verified green in `tes
   - `tests/engine.test.ts` (17 tests)
 - `npm run build`: 24 routes successfully compiled and optimized.
 
+---
+
+## Phase: P2.5: UI/UX Design Overhaul
+**Date**: October 14, 2026  
+**Status**: COMPLETE ✅  
+**Commit Message**: `P2.5: design overhaul`
+
+---
+
+### 1. Architectural Summary & Design System Installation
+- **Typography Tokens**:
+  - Global UI Font: **Inter** (`font-sans`, weights 400/500/600/700/800) loaded via Google Fonts.
+  - Financial & Code Font: **IBM Plex Mono** (`font-mono`, weights 400/500/600/700) reserved exclusively for monetary amounts, transaction hashes, document IDs, and code-like data.
+  - Strict Type Hierarchy: Page titles `28px/800 tracking-tight`, section titles `18px/700`, body copy `14.5px/400`, captions `12px/500 text-muted`, stat card figures `30-34px/700 tabular-nums`.
+- **Color Palette & Design Tokens**:
+  - Background: `#F7F8FA`
+  - Surfaces & Cards: `#FFFFFF` with `1px border border-[#E6E9EF]` and `12px (rounded-xl)` corner radius
+  - Borders & Dividers: `#E6E9EF`
+  - Text Primary: `#0F172A` (Slate 900)
+  - Text Muted: `#64748B` (Slate 500)
+  - Primary Accent: Single cohesive blue `#2563EB` (Blue 600) for active navigation states, primary buttons, and focus rings. Removed all competing orange CTA colors and dark button fills.
+  - Semantic Feedback Colors: Green `#16A34A` (verified/passed), Amber `#D97706` (needs attention), Red `#DC2626` (critical/failed), Blue `#2563EB` (in-progress/info).
+- **Navigation & Layout Architecture**:
+  - Fixed 240px Left Navigation Sidebar replacing the crowded horizontal top bar.
+  - Sidebar Groups: `OVERVIEW` (Dashboard), `VERIFICATION` (Sources & Upload, Bank Transactions, General Ledger, Run History), `WORKFLOW` (Exceptions with live count badge, Trust Certificate), `SETTINGS` (Team, Notifications).
+  - Sidebar Header: Platform brand + organization name with DEMO badge; Sidebar Footer: Authenticated user identity + clean Sign Out button.
+  - Mobile Drawer: Responsive hamburger toggle slides out the complete navigation drawer on mobile viewports (< 1024px) with backdrop blur.
+  - Slim Top Bar: Sticky header holding contextual breadcrumbs and page actions.
+- **Component Standardization**:
+  - `src/components/ui/StatusPill.tsx`: Uniform status pill component with soft semantic background and strong colored text, supporting green, amber, red, blue, and gray tokens.
+  - `src/lib/labels.ts`: Canonical dictionary mapping every internal database enum (`DUPLICATE_PAYMENT`, `UNRECORDED_CREDIT`, `PENDING_REVIEW`, `RECONCILIATION_ENGINE_EXECUTED`, etc.) to clear human English. Includes `formatShortHash(hash, 8)` and `formatRelativeTime(date)`.
+  - `src/components/ui/CopyButton.tsx`: Micro-interaction clipboard copy button with visual checkmark confirmation.
+  - `src/components/ca/PriorityScoreChip.tsx`: Risk score badge with formula tooltip (`Weighted Risk Formula: Materiality (40%) + Anomaly Risk (30%) + Age (20%) + Evidence Completeness (10%)`).
+
+---
+
+### 2. Screens Redesigned & Verified
+
+#### A. Client Portal Dashboard (`/portal`)
+- 4 Hero Stat Cards with left icon chip, uppercase muted caption, 32px bold numbers with `tabular-nums`, and contextual subtitle ("7 of 8 matched").
+- Redesigned Reconciliation Engine Card: Plain-language summary, period selector, and Run button.
+- Real-Time Execution State: Animated 6-stage pipeline progress bar checking off steps sequentially:
+  1. `Normalize`: Clean data feeds & ISO standardization
+  2. `Validate`: Balance continuity & duplicate detection (R1-R4)
+  3. `Classify`: Deterministic rule-based transaction tagging
+  4. `Match`: 1:1 and 1:many algorithmic ledger matching
+  5. `Three-Way`: Bank ↔ Ledger ↔ Invoices corroboration
+  6. `Exceptions`: Materiality analysis & explainable exception creation
+- Redesigned Exceptions Block: Clean full-row list items with left severity icon, 16px bold title, 2-line truncated description, right-aligned mono amount, and status pill.
+
+#### B. Exceptions Resolution Workspace & Detail View (`/portal/exceptions`)
+- Exception Cards styled with distinct 4px left severity border (red=critical, amber=high, blue=info).
+- Replaced nested card clutter with structured clean dividers.
+- Detailed Inspection Modal / View:
+  - "What happened" and "Why it matters" rendered as separate labeled explanation blocks in plain language.
+  - 3-Column Financial Comparison: Bank Statement vs General Ledger vs Corroborating Invoices with exact variance highlighting in red.
+  - Tinted Callout Box: Suggested resolution guidance and required supporting evidence checklist.
+
+#### C. CA Console Overview (`/ca`)
+- Consistent design system and layout matching the portal.
+- Ranked Review Queue Table: Sortable and scannable with severity pill, mono amount, days-waiting counter, and interactive `PriorityScoreChip` with formula explanation tooltip.
+- Engagement Metrics: Assurance level status, total verified coverage, and pending exceptions.
+
+#### D. Audit Trail & Cryptographic Chain (`/ca/audit-trail`)
+- Vertical Timeline Design: Distinct icons per action type, human readable event titles via `ENUM_LABELS`, relative timestamps ("2 hours ago"), and actor identity.
+- Truncated Hashes: All SHA-256 hashes shortened to 8 characters with inline `<CopyButton />`, eliminating wall-of-hash clutter.
+- Slide-Over Inspection Drawer: Clicking "Inspect Full Hash Chain" or individual block details opens a right slide-over drawer where the complete 64-character SHA-256 hashes and parent pointers live in clean monospace.
+
+#### E. Sign-In Page (`/auth/signin`)
+- Centered, minimalist card layout with Attest brand mark and clean typography.
+- Role-Gated Quick Login: Two styled persona buttons (Client Owner `demo@attest.pk` and CA Reviewer `ca@attest.pk`) with explicit role descriptions and one-click demo credentials.
+
+#### F. Public Verification Page (`/verify/[id]`)
+- Restyled verification sheet adhering to `#F7F8FA` background, `#2563EB` branding, and clean tabular data for company registration, accounting scope, and legal disclaimers.
+
+---
+
+### 3. Acceptance Verification & Proof
+
+1. **Full Test Suite Execution**:
+   - `npm test`: **32 passed (32/32 tests green across all 6 test suites)**.
+   - Zero regression in money rules, deterministic engine specs T1-T17, tenant isolation, audit chaining, or ingestion parsing.
+2. **Production Build**:
+   - `npm run build`: Compiled with zero TypeScript errors or lint issues across all 24 application routes.
+3. **Grep Proof (Zero Raw Enums & Zero Full Hashes)**:
+   - Verified that all database enum values are routed through `src/lib/labels.ts` (`ENUM_LABELS` / `formatEnumLabel`).
+   - Verified that all SHA-256 hashes are truncated using `formatShortHash(hash, 8)` in standard views, with full 64-char hashes strictly isolated to the slide-over inspection drawer.
+4. **Mobile Responsiveness (375px Viewport)**:
+   - Tested at 375px width: 240px sidebar collapses into a hamburger drawer, stat cards stack vertically into a single column, tables scroll smoothly horizontally, and dialogs adapt cleanly.
+5. **Visual Walkthrough Artifacts**:
+   - `01_signin.png`: Sign-in screen with role descriptions
+   - `02_portal_dashboard.png`: Portal dashboard with 4 stat cards & exceptions list
+   - `03_engine_running.png`: 6-stage animated pipeline progress bar during execution
+   - `04_engine_completed.png`: Completed verification pass with Level 1 summary
+   - `05_exceptions_list.png`: Exceptions desk with 4px left severity border
+   - `06_exception_e101_detail.png`: E-101 duplicate payment 3-column financial comparison
+   - `07_exception_e102_detail.png`: E-102 unrecorded credit explanation & resolution
+   - `08_ca_console.png`: CA Console ranked review queue with priority score chips
+   - `09_ca_audit_timeline.png`: CA audit trail vertical timeline
+   - `10_audit_drawer.png`: Slide-over drawer with complete SHA-256 hash inspection
+   - `11_verify_certificate.png`: Public assurance certificate verification sheet
+   - `12_mobile_responsive.png` / `13_mobile_portal_dashboard.png`: 375px mobile responsive view
+
+---
+
+### 4. What is Partial / Deferred to Next Phases
+- **CA Console Exception Resolution & Sign-Off Chamber (P3)**: Formal CA sign-off workflow, exception waivers with mandatory justification, and certificate minting.
+- **Hardware Security Module (HSM) PKI Signing (P3)**: Qualified digital signatures for production deployment.
+
+---
+
+### 5. Verification Test & Build Log
+- `npm test`: 6 test suites passed, 32 tests passed (100%).
+- `npm run build`: 24 routes successfully compiled and optimized.
+
+
 
