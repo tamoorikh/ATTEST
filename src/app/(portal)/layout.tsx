@@ -21,6 +21,7 @@ import {
   ArrowUpRight,
 } from "lucide-react";
 import { DemoBanner } from "@/components/common/DemoBanner";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 interface NavItem {
   label: string;
@@ -250,6 +251,8 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
               <span>Public Verifier</span>
               <ArrowUpRight className="w-3.5 h-3.5" />
             </Link>
+
+            <NotificationBell />
 
             {userRole === "CA-reviewer" && (
               <Link

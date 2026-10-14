@@ -20,6 +20,7 @@ import {
   UserCheck,
 } from "lucide-react";
 import { DemoBanner } from "@/components/common/DemoBanner";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 interface NavGroup {
   group: string;
@@ -230,6 +231,7 @@ export default function CALayout({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="flex items-center gap-3">
+            <NotificationBell />
             <Link
               href="/portal"
               className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#EFF6FF] text-[#2563EB] text-xs font-semibold hover:bg-blue-100 transition-colors"

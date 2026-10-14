@@ -424,17 +424,16 @@ async function main() {
       amountPaise: 11850000,
       period: "2026-04",
       bankTxId: createdBankTxs[5].id, // 15 Apr transaction
-      ledgerEntryId: createdLedgerEntries[4].id,
       suggestedResolution:
         "Verify whether 15 Apr was an erroneous double disbursement or advance payment for subsequent order. If erroneous, request vendor credit note or refund.",
     },
   });
 
-  // E-102: Unrecorded sale (12 Apr credit 34,000,000 has invoice #SI-2026-3387 but no ledger entry)
+  // E-102: Unrecorded credit/sale (12 Apr credit 34,000,000 has invoice #SI-2026-3387 but no ledger entry)
   const exc2 = await prisma.exception.create({
     data: {
       orgId: demoOrg.id,
-      type: "UNRECORDED_SALE",
+      type: "UNRECORDED_CREDIT",
       title: "E-102: Unrecorded bank deposit of PKR 340,000.00 from Al-Rehman Textiles",
       explanation:
         "Bank deposit of PKR 340,000.00 received on 12 Apr has no matching general ledger entry. FBR sales tax invoice #SI-2026-3387 dated 11 Apr exists in invoice register.",

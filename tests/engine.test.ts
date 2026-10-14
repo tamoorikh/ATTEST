@@ -760,4 +760,77 @@ describe("Phase 2: The Deterministic Reconciliation Engine (Specs T1 - T17)", ()
       }
     }
   });
+
+  // ---------------------------------------------------------------------------
+  // T18: category-aware evidence: payroll payment with matching ledger does NOT create a vendor-invoice exception
+  // ---------------------------------------------------------------------------
+  it("T18: category-aware evidence: payroll payment with matching ledger does NOT create a vendor-invoice exception", () => {
+    const payrollBankTx: BankTxInput = {
+      id: "btx-payroll",
+      orgId: "org-1",
+      date: new Date("2026-04-02T10:30:00Z"),
+      description: "Payroll salaries — April cycle",
+      counterparty: "Staff Payroll",
+      ref: "SAL-2026-04-01",
+      debitPaise: 48620000,
+      creditPaise: 0,
+    };
+
+    const payrollLedger: LedgerEntryInput = {
+      id: "led-payroll",
+      orgId: "org-1",
+      date: new Date("2026-04-02T10:30:00Z"),
+      description: "Payroll salaries — April cycle",
+      counterparty: "Staff Payroll",
+      ref: "SAL-2026-04-01",
+      debitPaise: 48620000,
+      creditPaise: 0,
+      account: "Salaries & Wages Expense",
+    };
+
+    // Auto-matched candidate between bank and ledger
+    const matches: MatchCandidate[] = [
+      {
+        bankTxIds: [payrollBankTx.id],
+        ledgerEntryIds: [payrollLedger.id],
+        score: 1.0,
+        rule: "amount_exact + date_window + counterparty_1.00",
+        status: "AUTO_MATCHED",
+        type: "ONE_TO_ONE",
+        amountPaise: 48620000,
+      },
+    ];
+
+    // Invoices array has other supplier invoices (e.g. Zubair Traders) but none for payroll
+    const invoices: InvoiceInput[] = [
+      {
+        id: "inv-zt",
+        orgId: "org-1",
+        invoiceNumber: "ZT-1141",
+        date: new Date("2026-04-05"),
+        counterparty: "Zubair Traders",
+        amountPaise: 11850000,
+        type: "PURCHASE",
+      },
+    ];
+
+    const exceptions = generateExceptions(
+      "2026-04",
+      [payrollBankTx],
+      [payrollLedger],
+      invoices,
+      matches,
+      []
+    );
+
+    // Verify: PAYMENT_WITHOUT_INVOICE MUST NOT fire for payroll
+    const paymentNoInvExc = exceptions.find((e) => e.type === "PAYMENT_WITHOUT_INVOICE");
+    expect(paymentNoInvExc).toBeUndefined();
+
+    // Verify: no payroll exceptions because it is corroborated by ledger
+    const payrollExc = exceptions.find((e) => e.type === "PAYROLL_EVIDENCE_MISSING");
+    expect(payrollExc).toBeUndefined();
+    expect(exceptions).toHaveLength(0);
+  });
 });
+

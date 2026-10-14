@@ -63,7 +63,7 @@ export function runReconciliationPipeline(
   });
   const classifications = classifyTransactions(bankTxs, verifiedCreditMap);
 
-  // 4. EXCEPTION GENERATION
+  // 4. EXCEPTION GENERATION (Category-Aware)
   const exceptions = generateExceptions(
     period,
     bankTxs,
@@ -71,6 +71,7 @@ export function runReconciliationPipeline(
     invoices,
     matches,
     threeWayResults,
+    classifications,
     {
       ...DEFAULT_EXCEPTION_CONFIG,
       directorNames: input.directorNames || DEFAULT_EXCEPTION_CONFIG.directorNames,
@@ -282,14 +283,16 @@ export async function executeOrchestratorForPeriod(
   const currentEngineExceptionKeys = new Set<string>();
 
   for (const exc of output.exceptions) {
-    const key = `${exc.type}:${exc.bankTxId || ""}:${exc.ledgerEntryId || ""}:${exc.amountPaise}`;
+    const key = exc.bankTxId
+      ? `${exc.type}:${exc.bankTxId}:${exc.amountPaise}`
+      : `${exc.type}:${exc.ledgerEntryId || ""}:${exc.amountPaise}`;
     currentEngineExceptionKeys.add(key);
 
     const existing = existingExceptions.find(
       (e) =>
         e.type === exc.type &&
-        (e.bankTxId === exc.bankTxId || (!e.bankTxId && !exc.bankTxId)) &&
-        (e.ledgerEntryId === exc.ledgerEntryId || (!e.ledgerEntryId && !exc.ledgerEntryId))
+        ((e.bankTxId && exc.bankTxId && e.bankTxId === exc.bankTxId) ||
+         (!e.bankTxId && !exc.bankTxId && e.ledgerEntryId === exc.ledgerEntryId))
     );
 
     if (!existing) {
@@ -336,12 +339,11 @@ export async function executeOrchestratorForPeriod(
       const parts = prevKey.split(":");
       const pType = parts[0];
       const pBankTxId = parts[1];
-      const pLedgerEntryId = parts[2];
       const matchingDbExc = existingExceptions.find(
         (e) =>
           e.type === pType &&
-          (e.bankTxId === pBankTxId || (!e.bankTxId && !pBankTxId)) &&
-          (e.ledgerEntryId === pLedgerEntryId || (!e.ledgerEntryId && !pLedgerEntryId))
+          ((e.bankTxId && pBankTxId && e.bankTxId === pBankTxId) ||
+           (!e.bankTxId && !pBankTxId))
       );
       if (matchingDbExc && (matchingDbExc.status === "RESOLVED" || matchingDbExc.status === "WAIVED")) {
         resolvedCount++;
@@ -352,7 +354,9 @@ export async function executeOrchestratorForPeriod(
   // Check if any previously OPEN exceptions in DB are no longer generated
   for (const prev of existingExceptions) {
     if (prev.status === "OPEN") {
-      const key = `${prev.type}:${prev.bankTxId || ""}:${prev.ledgerEntryId || ""}:${prev.amountPaise}`;
+      const key = prev.bankTxId
+        ? `${prev.type}:${prev.bankTxId}:${prev.amountPaise}`
+        : `${prev.type}:${prev.ledgerEntryId || ""}:${prev.amountPaise}`;
       if (!currentEngineExceptionKeys.has(key)) {
         await prisma.exception.update({
           where: { id: prev.id },

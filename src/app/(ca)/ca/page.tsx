@@ -29,9 +29,7 @@ export default async function CAConsoleDashboard() {
       bankAccounts: true,
       bankTransactions: true,
       ledgerEntries: true,
-      exceptions: {
-        where: { status: "OPEN" },
-      },
+      exceptions: true,
       certificates: {
         take: 1,
         orderBy: { createdAt: "desc" },
@@ -45,13 +43,41 @@ export default async function CAConsoleDashboard() {
   });
 
   const cert = org?.certificates[0];
-  const rawExceptions = org?.exceptions || [];
+  const allExceptions = org?.exceptions || [];
   const bankTxs = org?.bankTransactions || [];
   const ledgerEntries = org?.ledgerEntries || [];
 
+  // Live CA Overview Metrics (Requirement 7)
+  const pendingSubmissions = allExceptions.filter((e) => e.status === "CLIENT_SUBMITTED");
+  const resolvedThisMonth = allExceptions.filter((e) => e.status === "RESOLVED");
+  const highSeverityOpen = allExceptions.filter(
+    (e) =>
+      (e.status === "OPEN" || e.status === "CLIENT_SUBMITTED" || e.status === "MORE_INFO_REQUESTED") &&
+      (e.severity === "CRITICAL" || e.severity === "HIGH")
+  );
+
+  let totalTurnaroundHours = 0;
+  let resolvedCount = 0;
+  for (const exc of allExceptions) {
+    if (exc.resolvedAt && exc.createdAt) {
+      const hours =
+        (new Date(exc.resolvedAt).getTime() - new Date(exc.createdAt).getTime()) /
+        (1000 * 60 * 60);
+      totalTurnaroundHours += hours;
+      resolvedCount++;
+    }
+  }
+  const avgTurnaroundDisplay =
+    resolvedCount > 0 ? `${(totalTurnaroundHours / resolvedCount).toFixed(1)} hrs` : "< 1 day";
+
+  // Active exceptions that require review in prioritized queue
+  const activeExceptions = allExceptions.filter(
+    (e) => e.status !== "RESOLVED" && e.status !== "WAIVED"
+  );
+
   // Calculate days-waiting and priority score for ranked queue
   const now = new Date();
-  const rankedExceptions = rawExceptions
+  const rankedExceptions = activeExceptions
     .map((exc) => {
       const createdDate = new Date(exc.createdAt);
       const diffMs = Math.max(0, now.getTime() - createdDate.getTime());
@@ -62,6 +88,7 @@ export default async function CAConsoleDashboard() {
         HIGH: 30,
         MEDIUM: 20,
         LOW: 10,
+        INFO: 5,
       };
       const sevScore = severityWeights[exc.severity] ?? 25;
       const amountScore = Math.min(40, Math.round((exc.amountPaise / 40000000) * 40));
@@ -101,7 +128,7 @@ export default async function CAConsoleDashboard() {
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold shadow-sm transition-colors"
           >
             <Scale className="w-4 h-4" />
-            Review {rawExceptions.length} Exceptions
+            Review {allExceptions.length} Exceptions
           </Link>
           <Link
             href="/ca/sign-off"
@@ -132,59 +159,77 @@ export default async function CAConsoleDashboard() {
         </div>
       </div>
 
-      {/* 4 Stat Cards */}
+      {/* Screen C Live Metric Cards (Requirement 7) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-xl border border-[#E6E9EF] shadow-sm flex items-start gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-[#2563EB] shrink-0">
-            <Building2 className="w-5 h-5" />
+        {/* Metric 1: Pending Submissions */}
+        <Link
+          href="/ca/exceptions?filter=CLIENT_SUBMITTED"
+          className="bg-white p-5 rounded-xl border border-[#E6E9EF] shadow-sm flex items-start gap-3.5 hover:border-[#2563EB]/40 hover:shadow-md transition-all group"
+        >
+          <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-[#2563EB] shrink-0 group-hover:bg-[#2563EB] group-hover:text-white transition-colors">
+            <FileCheck2 className="w-5 h-5" />
           </div>
           <div className="flex-1 min-w-0">
-            <span className="text-xs font-medium text-[#64748B]">Reconciled Bank Volume</span>
+            <span className="text-xs font-medium text-[#64748B]">Pending Submissions</span>
             <div className="text-2xl font-bold font-mono tracking-tight text-[#0F172A] mt-1 tabular-nums">
-              {formatPaise(163650000)}
+              {pendingSubmissions.length}
             </div>
-            <div className="text-xs text-[#64748B] mt-1">8 Transactions Verified</div>
-          </div>
-        </div>
-
-        <div className="bg-white p-5 rounded-xl border border-[#E6E9EF] shadow-sm flex items-start gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-[#2563EB] shrink-0">
-            <Layers className="w-5 h-5" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <span className="text-xs font-medium text-[#64748B]">Recorded Book Volume</span>
-            <div className="text-2xl font-bold font-mono tracking-tight text-[#0F172A] mt-1 tabular-nums">
-              {formatPaise(215700000)}
+            <div className="text-xs text-[#2563EB] font-medium mt-1">
+              Awaiting CA review &rarr;
             </div>
-            <div className="text-xs text-[#64748B] mt-1">7 Ledger Entries Verified</div>
           </div>
-        </div>
+        </Link>
 
-        <div className="bg-white p-5 rounded-xl border border-[#E6E9EF] shadow-sm flex items-start gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shrink-0">
-            <AlertTriangle className="w-5 h-5" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <span className="text-xs font-medium text-[#64748B]">Pending Exceptions</span>
-            <div className="text-2xl font-bold font-mono tracking-tight text-amber-600 mt-1 tabular-nums">
-              {rawExceptions.length} Items
-            </div>
-            <div className="text-xs text-amber-700 font-medium mt-1">E-101 &amp; E-102 unapproved</div>
-          </div>
-        </div>
-
-        <div className="bg-white p-5 rounded-xl border border-[#E6E9EF] shadow-sm flex items-start gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-[#D97706] shrink-0">
+        {/* Metric 2: Average Turnaround */}
+        <Link
+          href="/ca/exceptions"
+          className="bg-white p-5 rounded-xl border border-[#E6E9EF] shadow-sm flex items-start gap-3.5 hover:border-[#2563EB]/40 hover:shadow-md transition-all group"
+        >
+          <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-[#2563EB] shrink-0 group-hover:bg-[#2563EB] group-hover:text-white transition-colors">
             <Clock className="w-5 h-5" />
           </div>
           <div className="flex-1 min-w-0">
-            <span className="text-xs font-medium text-[#64748B]">Issuance Readiness</span>
-            <div className="text-2xl font-bold tracking-tight text-[#D97706] mt-1">
-              Blocked
+            <span className="text-xs font-medium text-[#64748B]">Average Turnaround</span>
+            <div className="text-2xl font-bold font-mono tracking-tight text-[#0F172A] mt-1 tabular-nums">
+              {avgTurnaroundDisplay}
             </div>
-            <div className="text-xs text-[#64748B] mt-1">Requires CA review of exceptions</div>
+            <div className="text-xs text-[#64748B] mt-1">Review cycle speed</div>
           </div>
-        </div>
+        </Link>
+
+        {/* Metric 3: Resolved This Month */}
+        <Link
+          href="/ca/exceptions?filter=RESOLVED"
+          className="bg-white p-5 rounded-xl border border-[#E6E9EF] shadow-sm flex items-start gap-3.5 hover:border-emerald-300 hover:shadow-md transition-all group"
+        >
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+            <CheckCircle2 className="w-5 h-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <span className="text-xs font-medium text-[#64748B]">Resolved This Month</span>
+            <div className="text-2xl font-bold font-mono tracking-tight text-emerald-600 mt-1 tabular-nums">
+              {resolvedThisMonth.length}
+            </div>
+            <div className="text-xs text-emerald-700 font-medium mt-1">Corroborated with evidence</div>
+          </div>
+        </Link>
+
+        {/* Metric 4: High-Severity Open */}
+        <Link
+          href="/ca/exceptions?filter=HIGH_SEVERITY"
+          className="bg-white p-5 rounded-xl border border-[#E6E9EF] shadow-sm flex items-start gap-3.5 hover:border-amber-300 hover:shadow-md transition-all group"
+        >
+          <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-[#D97706] shrink-0 group-hover:bg-amber-600 group-hover:text-white transition-colors">
+            <AlertTriangle className="w-5 h-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <span className="text-xs font-medium text-[#64748B]">High-Severity Open</span>
+            <div className="text-2xl font-bold font-mono tracking-tight text-[#D97706] mt-1 tabular-nums">
+              {highSeverityOpen.length}
+            </div>
+            <div className="text-xs text-amber-700 font-medium mt-1">Requires immediate scrutiny</div>
+          </div>
+        </Link>
       </div>
 
       {/* Screen C Requirement: Ranked Review Queue Table */}
@@ -254,10 +299,10 @@ export default async function CAConsoleDashboard() {
                   </td>
                   <td className="py-3.5 px-4 text-center">
                     <Link
-                      href="/ca/exceptions"
+                      href={`/ca/exceptions/${exc.id}`}
                       className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#2563EB] hover:bg-blue-700 text-white font-medium text-xs transition-colors"
                     >
-                      <span>Examine</span>
+                      <span>Examine Workpaper</span>
                       <ChevronRight className="w-3.5 h-3.5" />
                     </Link>
                   </td>

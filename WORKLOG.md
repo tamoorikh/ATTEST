@@ -495,5 +495,115 @@ All 17 required acceptance specifications implemented and verified green in `tes
 - `npm test`: 6 test suites passed, 32 tests passed (100%).
 - `npm run build`: 24 routes successfully compiled and optimized.
 
+---
+
+## Phase: P3: Exception Resolution Workflow + CA Review Loop
+**Date**: October 14, 2026  
+**Status**: COMPLETE ✅  
+**Commit Message**: `P3: review loop`
+
+---
+
+### 1. Architectural Summary & Scope Delivered
+This phase makes Attest's core promise real: **clients resolve, professionals judge, nothing resolves itself.**
+- **Category-Aware Exception Generator**: Re-engineered exception generation rules so that expected evidence is contextualized per transaction category (`supplier-payment` requires tax invoice, `payroll` requires payroll register, `rent-utilities` requires utility bill, `tax-payment` requires challan, `inter-account-transfer` is self-reconciling). Suppressed over-firing of `PAYMENT_WITHOUT_INVOICE` on payroll and utilities when matching general ledger entries exist.
+- **Client Resolution Stepper (`/portal/exceptions`)**: 4-step guided workflow (Strategy Selection -> Evidence Attachment/Linking -> Written Explanation & Authorization Declaration -> Review & Submit) that updates status to `CLIENT_SUBMITTED`, attaches vault evidence, logs audit events, and notifies the assigned CA.
+- **Constitutional Authority Rule Enforcement**: Enforced server-side in API routes (`/api/exceptions/[id]/resolve` and `/api/exceptions/[id]/review`) that client roles can NEVER resolve an exception (HTTP 403 Forbidden). Only licensed `CA-reviewer` and `PlatformAdmin` roles can transition an exception to `RESOLVED`.
+- **CA Full Workpaper View (`/ca/exceptions/[id]`)**: Comprehensive auditor view containing engagement metadata header, 3-column verification model (Bank vs Ledger vs Invoice), client submission package with clickable SHA-256 evidence links, audit dialogue timeline, and adjudication chamber (Accept Resolution, Reject with Mandatory Reason, Request More Info, Escalate to Partner).
+- **Live CA Overview Metrics**: Built live computation for Pending Submissions, Average Review Turnaround (`hrs` or `< 1 day`), Resolved This Month, and High-Severity Open, with deep filter links to `/ca/exceptions?filter=...`.
+- **Automatic Ledger Resolution Hook**: On CA acceptance of an unrecorded receipt/sale exception (E-102 shape), automatically creates the adjusting journal entry (`SI-2026-3387-ADJ` for PKR 340,000.00 credit to Domestic Sales Revenue), marks the transaction `MATCHED`, creates a confirmed `Match` record, and increases overall reconciliation coverage to 100% (8/8 bank transactions).
+- **In-App Notification Center**: Built `NotificationBell.tsx` integrated into the top headers of both Client Portal and CA Console, featuring unread count badges, formatted relative timestamps, transition summaries, deep links to exceptions/workpapers, and mark-all-read functionality.
+
+---
+
+### 2. What Works (Fully Functional & Verified)
+
+#### A. Category-Aware Evidence Engine & Generator
+- In `src/engine/types.ts`: Defined `ExpectedEvidenceType`, `CategoryEvidenceRequirement`, `CATEGORY_EXPECTED_EVIDENCE` mapping transaction categories to statutory expected documents. Added `PAYROLL_EVIDENCE_MISSING` and `UTILITIES_BILL_MISSING` types, plus `INFO` severity level.
+- In `src/engine/exceptions.ts`: Refactored `generateExceptions` to inspect transaction categories:
+  - `supplier-payment`: Lacking tax invoice fires `PAYMENT_WITHOUT_INVOICE` (LOW severity when matched to ledger).
+  - `payroll`: Matched to ledger requires payroll register; matching entries generate 0 exceptions. Unmatched payroll fires `PAYROLL_EVIDENCE_MISSING` (INFO severity).
+  - `rent-utilities`: Matched to ledger generates 0 exceptions. Unmatched utilities fires `UTILITIES_BILL_MISSING` (LOW severity).
+  - `tax-payment`: Matched to ledger generates 0 exceptions.
+  - `inter-account-transfer`: Self-reconciling, generates 0 exceptions.
+- Added Vitest engine test **T18**: Proves that a payroll payment with a matching ledger entry does NOT create a vendor invoice exception.
+
+#### B. Client Guided Resolution Stepper (`/portal/exceptions`)
+- Exception desk cards feature an active action panel with an interactive 4-step stepper:
+  - **Step 1 — Strategy**: Contextual options based on exception type (`DUPLICATE_REVERSAL`, `MISSING_EVIDENCE`, `EXPLANATION`, `DISPUTE`).
+  - **Step 2 — Evidence**: Supports uploading new files (cryptographically SHA-256 hashed and stored in the tenant vault), linking existing vault documents, or linking statutory tax invoices (e.g. FBR Invoice `#SI-2026-3387`).
+  - **Step 3 — Explanation & Declaration**: Strict validation requiring minimum 20 characters written explanation and mandatory authorization checkbox (*"I confirm this information is accurate and I am authorized to provide it"*).
+  - **Step 4 — Review & Submit**: Summary card displaying strategy, evidence name/hash, explanation note, and confirmation badge. Submitting transitions exception to `CLIENT_SUBMITTED`, adds an `ExceptionComment`, writes a hash-chained `AuditEvent`, and creates an in-app `Notification` for CA reviewers.
+- While under review (`CLIENT_SUBMITTED` or `CA_REVIEW`), client view displays a prominent read-only banner (*"Awaiting Professional Review — Typically 1 Business Day"*), disables stepper editing, and allows adding supplemental clarifying comments to the ongoing audit dialogue.
+- On rejection, status returns to `OPEN` and displays the CA's exact reasoning in a prominent rejection card at the top, enabling clients to submit a revised round while preserving complete historical dialogue.
+
+#### C. CA Workpaper Queue & Adjudication Chamber (`/ca/exceptions/[id]`)
+- Queue links to full dedicated Workpaper views featuring:
+  - Engagement header with organization name, period (April 2026), accounting standard (IFRS for SMEs), and priority score chip.
+  - 3-Column Reconciliation Model (Bank Statement, General Ledger, Tax/Sales Invoice) with verified pills and discrepancy highlights.
+  - Client Resolution Package card with strategy tag, explanation narrative, authorization badge, and clickable SHA-256 evidence links.
+  - Audit Trail & Dialogue timeline with author names, roles, and timestamps.
+  - CA Adjudication Chamber:
+    - **Accept Resolution**: Transitions status to `RESOLVED`, sets `resolvedById` and `resolvedAt`, and triggers adjusting ledger resolution for E-102.
+    - **Reject Resolution**: Enforces mandatory professional reasoning of at least 20 characters, returns status to `OPEN`, and notifies client.
+    - **Request More Info**: Requires minimum 20 characters, transitions status to `MORE_INFO_REQUESTED`, and notifies client.
+    - **Escalate**: Flags exception as escalated for senior signatory partner consultation.
+
+#### D. Live CA Overview Metrics (`/ca`)
+- **Pending Submissions**: Live count of exceptions in `CLIENT_SUBMITTED` status, linking to `/ca/exceptions?filter=CLIENT_SUBMITTED`.
+- **Average Turnaround**: Dynamically computed from `(resolvedAt - createdAt)` in hours, linking to `/ca/exceptions`.
+- **Resolved This Month**: Live count of exceptions in `RESOLVED` status, linking to `/ca/exceptions?filter=RESOLVED`.
+- **High-Severity Open**: Live count of unresolved `CRITICAL` and `HIGH` exceptions, linking to `/ca/exceptions?filter=HIGH_SEVERITY`.
+
+#### E. In-App Notification Center
+- Built `src/components/notifications/NotificationBell.tsx`:
+  - Bell icon with reactive unread count badge.
+  - Dropdown popover displaying notification title, icon indicator, description, relative time, and deep links.
+  - Mark-all-read endpoint (`PATCH /api/notifications/read-all`) and individual mark-read endpoint (`PATCH /api/notifications/[id]`).
+  - Integrated into both `(portal)` and `(ca)` navigation layouts.
+
+---
+
+### 3. Acceptance Verification & Proof
+
+1. **Full Vitest Suite Execution (`npm test`)**:
+   - **42 passed (42/42 tests green across all 7 test files)**:
+     - `tests/money.test.ts`: 4 tests passing (integer paisa validation, float rejection).
+     - `tests/audit.test.ts`: 2 tests passing (SHA-256 hash chaining and tamper detection).
+     - `tests/tenant-isolation.test.ts`: 2 tests passing (cross-tenant zero data leakage).
+     - `tests/auth-smoke.test.ts`: 2 tests passing (bcrypt hashing and RBAC rules).
+     - `tests/engine.test.ts`: 18 tests passing (T1–T17 + T18 category-aware rules).
+     - `tests/ingestion.test.ts`: 5 tests passing (bank statement parsing, OCR fallback).
+     - `tests/resolution-review.test.ts`: 9 tests passing (client cannot resolve 403, min 20 chars rejection reason, resubmission preserves history, hash-chained audit events, notification generation, adjusting ledger creation).
+2. **Production Build (`npm run build`)**:
+   - Compiled all 26 application routes and API endpoints cleanly with zero TypeScript errors or lint issues.
+3. **Automated E2E Walkthrough & Screenshot Evidence**:
+   - Executed full headless browser walkthrough via `scripts/e2e-phase3-full.ts` on the Meridian demo tenant:
+     - `01_p3_e101_stepper_step1.png`: Step 1 resolution strategy selection.
+     - `02_p3_e101_stepper_review.png`: Step 4 review package with attached evidence.
+     - `03_p3_e101_awaiting_review.png`: Client read-only view with "Awaiting Professional Review" banner.
+     - `04_p3_ca_overview_metrics.png`: CA console dashboard with 4 live metric cards and ranked queue.
+     - `05_p3_ca_workpaper_e101.png`: CA full workpaper view for E-101.
+     - `06_p3_ca_rejected_e101.png`: CA rejection with mandatory reason.
+     - `07_p3_client_rejection_view.png`: Client view showing rejection reason and "Resubmit Resolution" button.
+     - `08_p3_client_resubmitted_e101.png`: Client revised submission with official stamped certificate.
+     - `09_p3_ca_accepted_e101.png`: CA approval with status `RESOLVED`.
+     - `10_p3_e102_workpaper_resolved.png`: E-102 resolution with adjusting ledger entry posted and match confirmed.
+     - `11_p3_notification_center.png`: Notification bell popover showing workflow alerts.
+     - `12_p3_mobile_workpaper.png`: Mobile responsive workpaper rendering at 375px.
+
+---
+
+### 4. What is Partial / Deferred to Next Phases
+- **Certificate Issuance & HSM PKI Chamber (P4)**: CA final sign-off chamber, multi-signatory review for escalated items, and public certificate publishing.
+- **External Email Delivery Adapters**: In-app notifications are fully functional; email transport adapters remain stubs without live SMTP credentials.
+
+---
+
+### 5. Verification Test & Build Log
+- `npm test`: 7 test suites passed, 42 tests passed (100%).
+- `npm run build`: 26 routes successfully compiled and optimized.
+
+
 
 

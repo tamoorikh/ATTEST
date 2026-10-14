@@ -13,9 +13,13 @@ import {
   ExceptionCandidate,
   SeverityLevel,
   ExceptionType,
+  ClassificationResult,
+  TransactionCategory,
+  CATEGORY_EXPECTED_EVIDENCE,
 } from "./types";
 import { formatPaise } from "../lib/money";
 import { stringSimilarity, getDaysDifference } from "./matcher";
+import { classifyTransactions } from "./classifier";
 
 export interface ExceptionGeneratorConfig {
   materialityThresholdPaise: number; // default: 5,000,000 (PKR 50,000)
@@ -36,8 +40,12 @@ export function calculateSeverity(
     return "CRITICAL";
   }
 
-  if (type === "PERSONAL_MIXING_SUSPECTED") {
+  if (type === "PERSONAL_MIXING_SUSPECTED" || type === "UTILITIES_BILL_MISSING") {
     return "LOW";
+  }
+
+  if (type === "PAYROLL_EVIDENCE_MISSING") {
+    return "INFO";
   }
 
   if (type === "DUPLICATE_PAYMENT") {
@@ -48,6 +56,11 @@ export function calculateSeverity(
     if (amountPaise >= materiality * 5) return "CRITICAL";
     if (amountPaise >= materiality) return "HIGH";
     return "MEDIUM";
+  }
+
+  if (type === "PAYMENT_WITHOUT_INVOICE") {
+    // When matched to ledger, missing supplier invoice is LOW priority
+    return "LOW";
   }
 
   if (amountPaise >= materiality) {
@@ -64,8 +77,26 @@ export function generateExceptions(
   invoices: InvoiceInput[],
   matches: MatchCandidate[],
   threeWayResults: ThreeWayMatchResult[],
-  config: ExceptionGeneratorConfig = DEFAULT_EXCEPTION_CONFIG
+  classificationsOrConfig?: ClassificationResult[] | ExceptionGeneratorConfig,
+  optionalConfig?: ExceptionGeneratorConfig
 ): ExceptionCandidate[] {
+  let classifications: ClassificationResult[];
+  let config: ExceptionGeneratorConfig;
+
+  if (Array.isArray(classificationsOrConfig)) {
+    classifications = classificationsOrConfig;
+    config = optionalConfig || DEFAULT_EXCEPTION_CONFIG;
+  } else if (classificationsOrConfig && "materialityThresholdPaise" in classificationsOrConfig) {
+    classifications = classifyTransactions(bankTxs);
+    config = classificationsOrConfig;
+  } else {
+    classifications = classifyTransactions(bankTxs);
+    config = DEFAULT_EXCEPTION_CONFIG;
+  }
+
+  const categoryMap = new Map<string, TransactionCategory>();
+  classifications.forEach((c) => categoryMap.set(c.bankTxId, c.category));
+
   const exceptions: ExceptionCandidate[] = [];
   const materiality = config.materialityThresholdPaise;
 
@@ -160,35 +191,78 @@ export function generateExceptions(
     }
   }
 
-  // 3. PAYMENT WITHOUT INVOICE
-  // Debit matches ledger payable but no invoice document in purchase records
+  // 3. CATEGORY-AWARE EVIDENCE CHECKS FOR MATCHED DEBITS
+  // Only fire PAYMENT_WITHOUT_INVOICE when category === "supplier-payment" lacks an invoice
+  // Missing payroll register = PAYROLL_EVIDENCE_MISSING (info severity)
+  // Utilities without bills = UTILITIES_BILL_MISSING (low severity)
   for (const m of matches) {
     if (m.status === "AUTO_MATCHED") {
       const bankTx = bankTxs.find((b) => m.bankTxIds.includes(b.id) && b.debitPaise > 0);
       if (bankTx) {
-        // Check if there is an invoice matching this debit
-        const hasInvoice = invoices.some((inv) => {
-          const sim = stringSimilarity(inv.counterparty, bankTx.counterparty || bankTx.description);
-          return sim >= 0.75 && inv.amountPaise === bankTx.debitPaise;
-        });
+        const category = categoryMap.get(bankTx.id) || "unexplained";
 
-        if (!hasInvoice && invoices.length > 0) {
-          // Only flag if invoice register has records but this debit is missing invoice
-          const formatted = formatPaise(bankTx.debitPaise);
-          exceptions.push({
-            type: "PAYMENT_WITHOUT_INVOICE",
-            title: `Disbursement of ${formatted} lacks vendor invoice evidence`,
-            explanation: `Payment of ${formatted} to ${bankTx.counterparty || bankTx.description} on ${bankTx.date.toISOString().split("T")[0]} matches ledger booking but has no supporting tax invoice.`,
-            whyItMatters:
-              "Disbursements without statutory invoices risk disallowance under tax audits and failure of audit assertion of occurrence.",
-            suggestedResolution: "Obtain and archive the signed supplier bill or receipt voucher.",
-            evidenceRequired: "Supplier tax invoice with NTN and STRN.",
-            severity: calculateSeverity("PAYMENT_WITHOUT_INVOICE", bankTx.debitPaise, materiality),
-            amountPaise: bankTx.debitPaise,
-            period,
-            bankTxId: bankTx.id,
+        if (category === "supplier-payment") {
+          const hasInvoice = invoices.some((inv) => {
+            const sim = stringSimilarity(inv.counterparty, bankTx.counterparty || bankTx.description);
+            return sim >= 0.75 && inv.amountPaise === bankTx.debitPaise;
           });
+
+          if (!hasInvoice && invoices.length > 0) {
+            const formatted = formatPaise(bankTx.debitPaise);
+            exceptions.push({
+              type: "PAYMENT_WITHOUT_INVOICE",
+              title: `Disbursement of ${formatted} lacks vendor invoice evidence`,
+              explanation: `Payment of ${formatted} to ${bankTx.counterparty || bankTx.description} on ${bankTx.date.toISOString().split("T")[0]} matches ledger booking but has no supporting tax invoice.`,
+              whyItMatters:
+                "Disbursements without statutory invoices risk disallowance under tax audits and failure of audit assertion of occurrence.",
+              suggestedResolution: "Obtain and archive the signed supplier tax invoice with NTN and STRN.",
+              evidenceRequired: "Supplier tax invoice with NTN and STRN.",
+              severity: "LOW",
+              amountPaise: bankTx.debitPaise,
+              period,
+              bankTxId: bankTx.id,
+            });
+          }
         }
+        // When payroll, utilities, tax-payment, or inter-account-transfer match ledger, evidence is satisfied!
+      }
+    }
+  }
+
+  // 3b. UNMATCHED PAYROLL & UTILITY CHECKS
+  for (const b of debits) {
+    if (!matchedBankIds.has(b.id)) {
+      const cat = categoryMap.get(b.id);
+      if (cat === "payroll") {
+        const formatted = formatPaise(b.debitPaise);
+        exceptions.push({
+          type: "PAYROLL_EVIDENCE_MISSING",
+          title: `Payroll disbursement of ${formatted} missing register entry`,
+          explanation: `Staff salary payment of ${formatted} on ${b.date.toISOString().split("T")[0]} has no corroborated payroll register or expense entry in ledger.`,
+          whyItMatters:
+            "Uncorroborated payroll payments risk wage law non-compliance and unverified expense deduction.",
+          suggestedResolution: "Attach approved monthly payroll register signed by HR/Finance.",
+          evidenceRequired: "Approved payroll register entry or salary disbursement sheet.",
+          severity: "INFO",
+          amountPaise: b.debitPaise,
+          period,
+          bankTxId: b.id,
+        });
+      } else if (cat === "rent-utilities") {
+        const formatted = formatPaise(b.debitPaise);
+        exceptions.push({
+          type: "UTILITIES_BILL_MISSING",
+          title: `Supporting bill missing for utility payment of ${formatted}`,
+          explanation: `Utility disbursement of ${formatted} on ${b.date.toISOString().split("T")[0]} lacks matching utility bill or meter reading record.`,
+          whyItMatters:
+            "Utility payments must be reconciled against billing statements to confirm consumption period.",
+          suggestedResolution: "Upload paid billing invoice / consumer receipt.",
+          evidenceRequired: "Official utility bill (LESCO, SNGPL, etc.) or receipt voucher.",
+          severity: "LOW",
+          amountPaise: b.debitPaise,
+          period,
+          bankTxId: b.id,
+        });
       }
     }
   }

@@ -13,17 +13,26 @@ export default async function ExceptionsPage() {
           bankTx: true,
           ledgerEntry: true,
           evidence: true,
+          reviewNotes: {
+            include: { author: true },
+            orderBy: { createdAt: "desc" },
+          },
           comments: {
             include: { author: true },
+            orderBy: { createdAt: "asc" },
           },
         },
-        orderBy: { severity: "asc" },
+        orderBy: { createdAt: "asc" },
+      },
+      sourceDocuments: {
+        orderBy: { createdAt: "desc" },
       },
     },
   });
 
   const exceptions = org?.exceptions || [];
-  const openCount = exceptions.filter((e) => e.status === "OPEN").length;
+  const vaultDocuments = org?.sourceDocuments || [];
+  const openCount = exceptions.filter((e) => e.status === "OPEN" || e.status === "MORE_INFO_REQUESTED").length;
 
   return (
     <div className="space-y-6">
@@ -48,7 +57,10 @@ export default async function ExceptionsPage() {
       </div>
 
       {/* Exception Cards Desk */}
-      <ExceptionDesk exceptions={exceptions as any} />
+      <ExceptionDesk
+        exceptions={exceptions as any}
+        vaultDocuments={vaultDocuments as any}
+      />
     </div>
   );
 }

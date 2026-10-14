@@ -23,6 +23,7 @@ model User {
   certificatesSigned Certificate[]
   notifications      Notification[]
   auditEvents        AuditEvent[]
+  resolvedExceptions Exception[]         @relation("ExceptionResolvedBy")
 }
 
 model Organization {
@@ -125,6 +126,7 @@ model SourceDocument {
   uploadedBy   User              @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
   bankTransactions BankTransaction[]
   ledgerEntries    LedgerEntry[]
+  exceptionEvidence ExceptionEvidence[]
 
   @@index([orgId])
   @@index([uploadedById])
@@ -214,26 +216,39 @@ model Exception {
   type                String              // UNRECORDED_SALE, DUPLICATE_PAYMENT, AMOUNT_MISMATCH, etc.
   title               String
   explanation         String
-  severity            String              @default("MEDIUM") // LOW, MEDIUM, HIGH, CRITICAL
-  status              String              @default("OPEN") // OPEN, IN_REVIEW, RESOLVED, WAIVED
+  severity            String              @default("MEDIUM") // LOW, MEDIUM, HIGH, CRITICAL, INFO
+  status              String              @default("OPEN") // OPEN, CLIENT_SUBMITTED, CA_REVIEW, MORE_INFO_REQUESTED, RESOLVED, WAIVED
   amountPaise         Int                 @default(0)
   period              String              // "2026-04"
   bankTxId            String?
   ledgerEntryId       String?
   suggestedResolution String?
+
+  // Phase 3 Review Loop Fields
+  resolutionType      String?             // DUPLICATE_REVERSAL, MISSING_EVIDENCE, EXPLANATION, DISPUTE
+  resolutionNotes     String?
+  declarationAccepted Boolean             @default(false)
+  rejectionReason     String?
+  isEscalated         Boolean             @default(false)
+  resolvedById        String?
+  resolvedAt          DateTime?
+
   createdAt           DateTime            @default(now())
   updatedAt           DateTime            @updatedAt
 
   org                 Organization        @relation(fields: [orgId], references: [id], onDelete: Cascade)
   bankTx              BankTransaction?    @relation(fields: [bankTxId], references: [id], onDelete: SetNull)
   ledgerEntry         LedgerEntry?        @relation(fields: [ledgerEntryId], references: [id], onDelete: SetNull)
+  resolvedBy          User?               @relation("ExceptionResolvedBy", fields: [resolvedById], references: [id], onDelete: SetNull)
   comments            ExceptionComment[]
   evidence            ExceptionEvidence[]
+  reviewNotes         ReviewNote[]
 
   @@index([orgId])
   @@index([bankTxId])
   @@index([ledgerEntryId])
   @@index([status])
+  @@index([resolvedById])
 }
 
 model ExceptionComment {
@@ -252,38 +267,47 @@ model ExceptionComment {
 }
 
 model ExceptionEvidence {
-  id          String    @id @default(cuid())
-  exceptionId String
-  uploadedById String
-  filename    String
-  fileUrl     String?
-  sha256      String
-  notes       String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id               String          @id @default(cuid())
+  exceptionId      String
+  uploadedById     String
+  filename         String
+  fileUrl          String?
+  sha256           String
+  notes            String?
+  sourceDocumentId String?
+  linkedLedgerId   String?
+  linkedInvoiceNum String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
 
-  exception   Exception @relation(fields: [exceptionId], references: [id], onDelete: Cascade)
-  uploadedBy  User      @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+  exception        Exception       @relation(fields: [exceptionId], references: [id], onDelete: Cascade)
+  uploadedBy       User            @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+  sourceDocument   SourceDocument? @relation(fields: [sourceDocumentId], references: [id], onDelete: SetNull)
 
   @@index([exceptionId])
   @@index([uploadedById])
+  @@index([sourceDocumentId])
 }
 
 model ReviewNote {
-  id        String       @id @default(cuid())
-  orgId     String
-  authorId  String
-  period    String       // "2026-04"
-  content   String
-  status    String       @default("INTERNAL") // INTERNAL, SHARED_WITH_CLIENT, ACTION_REQUIRED
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
+  id          String       @id @default(cuid())
+  orgId       String
+  authorId    String
+  exceptionId String?
+  period      String       // "2026-04"
+  content     String
+  status      String       @default("INTERNAL") // INTERNAL, SHARED_WITH_CLIENT, ACTION_REQUIRED
+  actionType  String?      // ACCEPT, REJECT, MORE_INFO, ESCALATE
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 
-  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  author    User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  author      User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  exception   Exception?   @relation(fields: [exceptionId], references: [id], onDelete: Cascade)
 
   @@index([orgId])
   @@index([authorId])
+  @@index([exceptionId])
 }
 
 model ProcessingRun {

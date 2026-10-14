@@ -10,6 +10,8 @@ export const ENUM_LABELS: Record<string, string> = {
   UNRECORDED_CREDIT: "Receipt not recorded in books",
   UNRECORDED_SALE: "Unrecorded sale deposit",
   PAYMENT_WITHOUT_INVOICE: "Payment without invoice evidence",
+  PAYROLL_EVIDENCE_MISSING: "Payroll register entry missing",
+  UTILITIES_BILL_MISSING: "Supporting utility bill missing",
   LEDGER_WITHOUT_BANK: "Book entry without bank clearing",
   POSSIBLE_DIRECTOR_LOAN: "Director financing credit",
   PAYROLL_MISMATCH: "Payroll register discrepancy",
@@ -23,15 +25,21 @@ export const ENUM_LABELS: Record<string, string> = {
 
   // Exception Statuses
   OPEN: "Action required",
+  CLIENT_SUBMITTED: "Awaiting professional review",
+  CA_REVIEW: "Under CA review",
   IN_REVIEW: "Under CA review",
+  MORE_INFO_REQUESTED: "More evidence requested",
   RESOLVED: "Resolved with evidence",
   WAIVED: "Waived by CA",
+  REJECTED: "Submission rejected",
+  ESCALATED: "Escalated for senior review",
 
   // Severity Levels
   CRITICAL: "Critical",
   HIGH: "High priority",
   MEDIUM: "Medium priority",
   LOW: "Low priority",
+  INFO: "Informational",
 
   // Match Statuses
   AUTO_MATCHED: "Auto-matched",
@@ -44,7 +52,6 @@ export const ENUM_LABELS: Record<string, string> = {
   THREE_WAY_MATCHED: "3-Way fully verified",
   MISSING_INVOICE: "Missing invoice evidence",
   CANDIDATE: "Candidate match",
-  REJECTED: "Rejected",
 
   // Match Rule Types
   EXACT_AMOUNT_DATE: "Exact amount & date",
@@ -72,7 +79,11 @@ export const ENUM_LABELS: Record<string, string> = {
   STATEMENT_INGESTED: "Statement uploaded and parsed",
   TRANSACTION_CATEGORY_OVERRIDDEN: "Transaction category updated",
   COMPANY_ONBOARDING_COMPLETED: "Company onboarding submitted",
-  EXCEPTION_RESOLVED: "Exception resolved with evidence",
+  EXCEPTION_RESOLUTION_SUBMITTED: "Resolution submitted by client",
+  EXCEPTION_RESOLVED: "Resolution approved by CA",
+  EXCEPTION_RESOLUTION_REJECTED: "Resolution rejected by CA",
+  EXCEPTION_MORE_INFO_REQUESTED: "More evidence requested by CA",
+  EXCEPTION_ESCALATED: "Exception escalated to senior signatory",
   EXCEPTION_WAIVED: "Exception waived by CA",
   CERTIFICATE_ISSUED: "Trust certificate issued",
   INITIAL_CHAIN_GENESIS: "Audit anchor initialized",
@@ -80,6 +91,13 @@ export const ENUM_LABELS: Record<string, string> = {
   USER_LOGIN: "User session authenticated",
   DISCLOSURE_REQUESTED: "Third-party disclosure requested",
   REVIEW_NOTE_ADDED: "CA review note recorded",
+  NOTIFICATION_CREATED: "Notification dispatched",
+
+  // Resolution Types
+  DUPLICATE_REVERSAL: "Duplicate disbursement reversal",
+  MISSING_EVIDENCE: "Missing supporting evidence",
+  EXPLANATION: "Written accounting explanation",
+  DISPUTE: "Dispute finding",
 
   // Review Note Statuses
   INTERNAL: "CA Internal Note",
