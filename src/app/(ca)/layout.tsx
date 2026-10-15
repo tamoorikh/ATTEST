@@ -19,6 +19,7 @@ import {
 import { DemoBanner } from "@/components/common/DemoBanner";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { GraffitiBackdrop } from "@/components/ui/GraffitiBackdrop";
+import { CADock } from "@/components/navigation/CADock";
 
 interface NavGroup {
   group: string;
@@ -259,9 +260,12 @@ export default function CALayout({ children }: { children: React.ReactNode }) {
         {isDemo && <DemoBanner orgName={orgName} />}
 
         {/* Page Content */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto pb-28">
           {children}
         </main>
+
+        {/* Interactive Floating Dock Navigation */}
+        <CADock />
       </div>
     </div>
   );

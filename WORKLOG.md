@@ -993,9 +993,34 @@ The goal of Phase 6.1 is to separate demonstration environments from production 
 - `npm run build`: Compiled with zero TypeScript errors or lint issues.
 
 
+---
 
+## Phase 6.2: Interactive Dock Navigation Bar (macOS Style)
 
+### 1. Requirements & User Request
+- Ported user-provided `Dock` component (`src/components/ui/Dock.tsx`) featuring:
+  - Spring-driven magnification physics using `motion/react` (`stiffness: 400, damping: 25, mass: 0.4`).
+  - Gaussian proximity cursor scaling (`distance: 120px`, `magnification: 1.8x`).
+  - Floating animated tooltips anchored via `AnimatePresence`.
+  - Next.js SPA client-side routing support via `<Link>`.
+  - Dynamic active route pills, notification badges, and dividers.
 
+### 2. Implementation Details
+- **Framer Motion Integration**: Installed `motion` (^12.x) for `"motion/react"` animations.
+- **Tailwind Tokens**: Registered `background` (`#FAF9F6`) and `foreground` (`#17161A`) tokens in `tailwind.config.ts` to seamlessly support dynamic opacity utilities (`bg-background/80`, `text-foreground/70`, `border-foreground/[0.08]`).
+- **Core Component**: `src/components/ui/Dock.tsx` — Full faithful implementation of mouse-distance-based physics and hover tooltips.
+- **Client Portal Dock**: `src/components/navigation/PortalDock.tsx` — Floating bottom dock for `/portal` routes with live unread exception count badge (`2`), route indicators, and sign-out handler.
+- **CA Console Dock**: `src/components/navigation/CADock.tsx` — Floating bottom dock for `/ca` routes with review queue badge (`2`), reconciliation links, audit chain, and sign-off chamber.
+- **Layouts**: Updated `src/app/(portal)/layout.tsx` and `src/app/(ca)/layout.tsx` to include the dock with bottom spacing padding (`pb-28`).
+
+### 3. Verification & Visual Testing
+- `npm test`: **9 passed, 67/67 tests passing (100% green)**.
+- `npm run build`: Compiled cleanly across all 35 routes.
+- Browser test via Edge headless captured:
+  - `dock_portal_dashboard.png`: Active dashboard pill and frosted glass container.
+  - `dock_portal_hover.png`: Gaussian proximity expansion, tooltip, and exception badge.
+  - `dock_portal_exceptions.png`: Active Exceptions Desk state.
+  - `dock_ca_console.png`: CA Console floating dock.
 
 
 

@@ -22,6 +22,7 @@ import {
 import { DemoBanner } from "@/components/common/DemoBanner";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { GraffitiBackdrop } from "@/components/ui/GraffitiBackdrop";
+import { PortalDock } from "@/components/navigation/PortalDock";
 
 interface NavItem {
   label: string;
@@ -281,9 +282,12 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
         {isDemo && <DemoBanner orgName={orgName} />}
 
         {/* Page Content */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto pb-28">
           {children}
         </main>
+
+        {/* Interactive Floating Dock Navigation */}
+        <PortalDock />
       </div>
     </div>
   );
