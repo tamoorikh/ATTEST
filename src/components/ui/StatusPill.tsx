@@ -32,7 +32,9 @@ export function getVariantFromStatus(status: string | null | undefined): Semanti
     s === "PASS" ||
     s === "COMPLETED" ||
     s === "ISSUED" ||
-    s === "LEVEL_2"
+    s === "LEVEL_2" ||
+    s === "LEVEL_3" ||
+    s === "VALID"
   ) {
     return "green";
   }
@@ -45,7 +47,9 @@ export function getVariantFromStatus(status: string | null | undefined): Semanti
     s === "CONSECUTIVE_CONTINUITY_BREAK" ||
     s === "BALANCE_DISCREPANCY" ||
     s === "FAIL" ||
-    s === "ERROR"
+    s === "ERROR" ||
+    s === "REVOKED" ||
+    s === "SIGNATURE_INVALID"
   ) {
     return "red";
   }
@@ -66,7 +70,10 @@ export function getVariantFromStatus(status: string | null | undefined): Semanti
     s === "PAYMENT_WITHOUT_INVOICE" ||
     s === "LEDGER_WITHOUT_BANK" ||
     s === "MISSING_INVOICE" ||
-    s === "EXCEPTION"
+    s === "EXCEPTION" ||
+    s === "SUPERSEDED" ||
+    s === "CLIENT_SUBMITTED" ||
+    s === "MORE_INFO_REQUESTED"
   ) {
     return "amber";
   }
@@ -75,11 +82,14 @@ export function getVariantFromStatus(status: string | null | undefined): Semanti
   if (
     s === "MEDIUM" ||
     s === "LOW" ||
+    s === "INFO" ||
     s === "BANK_STATEMENT" ||
     s === "LEDGER" ||
     s === "INVOICE_REGISTER" ||
     s === "PRIMARY" ||
-    s === "SECONDARY"
+    s === "SECONDARY" ||
+    s === "LEVEL_1" ||
+    s === "STATEMENTS_ONLY"
   ) {
     return "blue";
   }
@@ -103,25 +113,25 @@ export function StatusPill({
   const displayLabel = label || formatEnumLabel(effectiveStatus);
 
   const variantStyles: Record<SemanticColor, string> = {
-    green: "bg-emerald-50 text-[#16A34A] border-emerald-200/70",
-    amber: "bg-amber-50 text-[#D97706] border-amber-200/70",
-    red: "bg-red-50 text-[#DC2626] border-red-200/70",
-    blue: "bg-blue-50 text-[#2563EB] border-blue-200/70",
-    gray: "bg-slate-100 text-[#64748B] border-slate-200",
+    green: "bg-[#E7F5EE] text-[#188A54] border-[#CBE6D8]",
+    amber: "bg-[#FCF2E2] text-[#B45309] border-[#F0DDBB]",
+    red: "bg-[#FBECEA] text-[#C0362C] border-[#F2CBC8]",
+    blue: "bg-[#EEEDFB] text-[#4F46E5] border-[#DCD9F8]",
+    gray: "bg-[#F1EFE9] text-[#6E6A61] border-[#E9E6DF]",
   };
 
   const dotStyles: Record<SemanticColor, string> = {
-    green: "bg-[#16A34A]",
-    amber: "bg-[#D97706]",
-    red: "bg-[#DC2626]",
-    blue: "bg-[#2563EB]",
-    gray: "bg-[#64748B]",
+    green: "bg-[#188A54]",
+    amber: "bg-[#B45309]",
+    red: "bg-[#C0362C]",
+    blue: "bg-[#4F46E5]",
+    gray: "bg-[#6E6A61]",
   };
 
   const sizeStyles = {
-    xs: "px-2 py-0.5 text-[10.5px] font-medium leading-none",
-    sm: "px-2.5 py-0.5 text-xs font-semibold leading-relaxed",
-    md: "px-3 py-1 text-[13px] font-semibold",
+    xs: "px-2 py-0.5 text-[10.5px] font-semibold leading-none",
+    sm: "px-2.5 py-0.5 text-[11px] font-bold leading-relaxed",
+    md: "px-3 py-1 text-xs font-bold",
   }[size];
 
   return (
@@ -133,3 +143,5 @@ export function StatusPill({
     </span>
   );
 }
+
+export default StatusPill;

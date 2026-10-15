@@ -585,8 +585,9 @@ export function ExceptionDesk({
                           </div>
                         </div>
                       ) : (
-                        <div className="text-xs text-[#DC2626] font-medium py-4 text-center bg-red-50/50 rounded-lg border border-red-100">
-                          ⚠️ Unrecorded in books (Missing adjusting journal entry)
+                        <div className="text-xs text-[#DC2626] font-medium py-4 text-center bg-red-50/50 rounded-lg border border-red-100 flex items-center justify-center gap-1.5">
+                          <AlertTriangle className="w-3.5 h-3.5 text-[#DC2626]" />
+                          Unrecorded in books (Missing adjusting journal entry)
                         </div>
                       )}
                     </div>

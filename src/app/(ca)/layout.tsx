@@ -5,22 +5,20 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import {
-  ShieldCheck,
-  CheckCircle2,
   FileSearch,
   Scale,
+  CheckCircle2,
   GitCommit,
   PenTool,
   LogOut,
   Building,
   Menu,
-  X,
   ChevronRight,
   ArrowUpRight,
-  UserCheck,
 } from "lucide-react";
 import { DemoBanner } from "@/components/common/DemoBanner";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { GraffitiBackdrop } from "@/components/ui/GraffitiBackdrop";
 
 interface NavGroup {
   group: string;
@@ -64,7 +62,6 @@ export default function CALayout({ children }: { children: React.ReactNode }) {
   const orgName = session?.user?.orgName || "Meridian Textiles (Pvt) Ltd";
   const userRole = session?.user?.role || "CA-reviewer";
   const userName = session?.user?.name || "Ayesha Siddiqui, FCA";
-  const userEmail = session?.user?.email || "ca@attest.pk";
 
   const getPageTitle = () => {
     for (const group of caNavGroups) {
@@ -77,65 +74,67 @@ export default function CALayout({ children }: { children: React.ReactNode }) {
   };
 
   const SidebarContent = () => (
-    <div className="flex flex-col h-full bg-[#0F172A] text-slate-200 border-r border-slate-800">
+    <div className="flex flex-col h-full bg-white/92 backdrop-blur-md border-r border-[#E9E6DF]">
       {/* Brand & Organization Top */}
-      <div className="p-4 border-b border-slate-800">
+      <div className="p-4 border-b border-[#E9E6DF]">
         <Link href="/ca" className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-[#2563EB] flex items-center justify-center text-white shadow-sm">
-            <ShieldCheck className="w-5 h-5 text-white" />
+          <div className="w-8 h-8 rounded-[10px] bg-[#4F46E5] flex items-center justify-center text-white shadow-sm shrink-0">
+            <svg width="16" height="16" viewBox="0 0 32 32">
+              <path d="M11 16.5l4 4 9.5-11" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </div>
           <div className="flex flex-col">
-            <span className="font-extrabold text-[15px] tracking-tight text-white leading-none">
+            <span className="font-heading font-extrabold text-[16px] tracking-tight text-[#17161A] leading-none">
               Attest
             </span>
-            <span className="text-[10px] uppercase font-mono tracking-wider text-blue-400 mt-0.5">
+            <span className="text-[10px] uppercase font-mono tracking-wider text-[#4F46E5] mt-0.5">
               CA Console
             </span>
           </div>
         </Link>
 
         {/* Audit Target */}
-        <div className="mt-3.5 pt-3 border-t border-slate-800/80 flex items-center justify-between">
+        <div className="mt-3 pt-3 border-t border-[#F1EFE9] flex items-center justify-between">
           <div className="flex items-center gap-1.5 min-w-0">
-            <Building className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-            <span className="text-xs font-medium text-slate-300 truncate">
+            <Building className="w-3.5 h-3.5 text-[#A8A296] shrink-0" />
+            <span className="text-xs font-semibold text-[#17161A] truncate" title={orgName}>
               {orgName}
             </span>
           </div>
           {isDemo && (
-            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-950/60 text-amber-400 border border-amber-800/50 font-bold shrink-0 ml-1">
+            <span className="text-[9px] font-bold tracking-wider uppercase px-1.5 py-0.5 rounded bg-[#FCF2E2] text-[#B45309] font-mono shrink-0">
               DEMO
             </span>
           )}
         </div>
       </div>
 
-      {/* Nav Groups */}
+      {/* Navigation Groups */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
         {caNavGroups.map((group) => (
           <div key={group.group} className="space-y-1">
-            <div className="px-2.5 text-[10.5px] font-bold uppercase tracking-wider text-slate-500">
+            <span className="px-3 text-[10px] font-bold tracking-wider text-[#A8A296] uppercase block mb-1">
               {group.group}
-            </div>
-            <div className="space-y-0.5 mt-1">
+            </span>
+            <div className="space-y-0.5">
               {group.items.map((item) => {
-                const Icon = item.icon;
                 const isActive = pathname === item.href;
+                const Icon = item.icon;
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
                     onClick={() => setMobileOpen(false)}
-                    className={`flex items-center justify-between px-2.5 py-2 rounded-lg text-xs font-medium transition-colors ${
+                    className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
                       isActive
-                        ? "bg-[#2563EB] text-white font-semibold"
-                        : "text-slate-400 hover:text-white hover:bg-slate-800/60"
+                        ? "bg-[#EEEDFB] text-[#4F46E5] font-bold"
+                        : "text-[#6E6A61] hover:text-[#17161A] hover:bg-[#F1EFE9]"
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
                       <Icon
                         className={`w-4 h-4 ${
-                          isActive ? "text-white" : "text-slate-400"
+                          isActive ? "text-[#4F46E5]" : "text-[#A8A296]"
                         }`}
                       />
                       <span>{item.label}</span>
@@ -144,8 +143,8 @@ export default function CALayout({ children }: { children: React.ReactNode }) {
                       <span
                         className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
                           isActive
-                            ? "bg-white text-[#2563EB]"
-                            : "bg-amber-400/20 text-amber-300 border border-amber-400/30"
+                            ? "bg-[#4F46E5] text-white"
+                            : "bg-[#FCF2E2] text-[#B45309]"
                         }`}
                       >
                         {item.badge}
@@ -159,27 +158,28 @@ export default function CALayout({ children }: { children: React.ReactNode }) {
         ))}
       </nav>
 
-      {/* Reviewer Identity Footer */}
-      <div className="p-3 border-t border-slate-800 bg-[#0B1220]">
+      {/* User Footer */}
+      <div className="p-3 border-t border-[#E9E6DF] bg-white/70">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shrink-0">
-              CA
+            <div className="w-8 h-8 rounded-full bg-[#17161A] text-white flex items-center justify-center text-xs font-bold shrink-0">
+              {userName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
             </div>
             <div className="flex flex-col min-w-0">
-              <span className="text-xs font-semibold text-white truncate">
+              <span className="text-xs font-semibold text-[#17161A] truncate">
                 {userName}
               </span>
-              <span className="text-[10px] text-blue-400 font-mono truncate">
-                Licensed ICAP #48921
+              <span className="text-[11px] text-[#6E6A61] truncate font-mono">
+                {userRole}
               </span>
             </div>
           </div>
 
           <button
+            type="button"
             onClick={() => signOut({ callbackUrl: "/auth/signin" })}
             title="Sign Out"
-            className="p-1.5 rounded-md text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-lg text-[#A8A296] hover:text-[#C0362C] hover:bg-[#FBECEA] transition-colors cursor-pointer"
           >
             <LogOut className="w-4 h-4" />
           </button>
@@ -189,7 +189,10 @@ export default function CALayout({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <div className="min-h-screen bg-[#F7F8FA] text-[#0F172A]">
+    <div className="relative min-h-screen bg-[#FAF9F6] text-[#17161A]">
+      {/* Decorative Whisper Graffiti Layer */}
+      <GraffitiBackdrop />
+
       {/* Desktop Fixed Sidebar (240px) */}
       <aside className="hidden md:block fixed inset-y-0 left-0 w-60 z-30">
         <SidebarContent />
@@ -199,45 +202,55 @@ export default function CALayout({ children }: { children: React.ReactNode }) {
       {mobileOpen && (
         <div className="fixed inset-0 z-50 md:hidden flex">
           <div
-            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm"
+            className="fixed inset-0 bg-[#17161A]/40 backdrop-blur-sm transition-opacity"
             onClick={() => setMobileOpen(false)}
           />
-          <div className="relative w-64 max-w-[80vw] h-full z-10">
+          <div className="relative w-64 max-w-[80vw] h-full z-10 shadow-2xl">
             <SidebarContent />
           </div>
         </div>
       )}
 
-      {/* Main Content (offset left 240px on desktop) */}
-      <div className="md:pl-60 flex flex-col min-h-screen">
-        {/* Slim Top Bar */}
-        <header className="sticky top-0 z-20 h-14 bg-white border-b border-[#E6E9EF] flex items-center justify-between px-4 sm:px-6">
+      {/* Main Content Area */}
+      <div className="relative z-10 md:pl-60 flex flex-col min-h-screen">
+        {/* Top Header */}
+        <header className="sticky top-0 z-20 h-14 bg-[#FAF9F6]/85 backdrop-blur-md border-b border-[#E9E6DF] flex items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-3">
             <button
+              type="button"
               onClick={() => setMobileOpen(true)}
-              className="md:hidden p-1.5 rounded-lg text-[#64748B] hover:bg-slate-100"
+              className="md:hidden p-1.5 rounded-lg text-[#6E6A61] hover:bg-[#F1EFE9] cursor-pointer"
               aria-label="Open Navigation"
             >
               <Menu className="w-5 h-5" />
             </button>
 
             <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-[#64748B]">Assurance</span>
-              <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
-              <span className="text-sm font-semibold text-[#0F172A]">
+              <span className="text-xs font-medium text-[#6E6A61]">CA Console</span>
+              <ChevronRight className="w-3.5 h-3.5 text-[#A8A296]" />
+              <span className="text-sm font-semibold text-[#17161A]">
                 {getPageTitle()}
               </span>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
+            <Link
+              href="/verify"
+              target="_blank"
+              className="hidden sm:inline-flex items-center gap-1 text-xs text-[#6E6A61] hover:text-[#4F46E5] font-semibold transition-colors"
+            >
+              <span>Public Verifier</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </Link>
+
             <NotificationBell />
+
             <Link
               href="/portal"
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#EFF6FF] text-[#2563EB] text-xs font-semibold hover:bg-blue-100 transition-colors"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-[#E9E6DF] bg-white text-xs font-semibold text-[#17161A] hover:bg-[#F1EFE9] transition-colors"
             >
-              <span>Switch to Client Portal</span>
-              <ArrowUpRight className="w-3.5 h-3.5" />
+              <span>Client Portal</span>
             </Link>
           </div>
         </header>

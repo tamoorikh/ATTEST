@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Attest — Verify once. Trusted by every bank.</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%234F46E5'/><path d='M11 16.5l4 4 9.5-11' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FAF9F6; --card:#FFFFFF; --line:#E9E6DF; --line2:#F1EFE9;
+  --txt:#17161A; --mut:#6E6A61; --faint:#A8A296;
+  --acc:#4F46E5; --acc2:#7C5CFF; --acc-d:#4338CA; --acc-bg:#EEEDFB; --acc-line:#DCD9F8;
+  --good:#188A54; --good-bg:#E7F5EE; --good-line:#CBE6D8;
+  --warn:#B45309; --warn-bg:#FCF2E2; --warn-line:#F0DDBB;
+  --bad:#C0362C; --bad-bg:#FBECEA;
+  --pink:#EC4899; --teal:#14B8A6; --amber2:#F59E0B;
+  --ease:cubic-bezier(.22,.75,.2,1);
+  --sh:0 1px 2px rgba(23,22,26,.04),0 10px 30px -14px rgba(23,22,26,.12);
+  --sh2:0 24px 60px -26px rgba(23,22,26,.25);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--txt);line-height:1.6;font-size:15.5px;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+h1,h2,h3,.disp{font-family:'Inter Tight','Inter',sans-serif;letter-spacing:-.03em;line-height:1.08}
+.mono{font-family:'JetBrains Mono',monospace;font-size:.92em}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+a{color:inherit;text-decoration:none}
+.view{display:none;min-height:100vh}.view.active{display:block}
+@keyframes riseIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes wordIn{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes spin360{to{transform:rotate(360deg)}}
+@keyframes spinSlow{to{transform:rotate(-360deg)}}
+@keyframes drift{to{transform:translate(-70px,50px) scale(1.12)}}
+@keyframes floatY{0%,100%{transform:translateY(0) rotate(var(--r,0deg))}50%{transform:translateY(-9px) rotate(var(--r,0deg))}}
+@keyframes mq{to{transform:translateX(-50%)}}
+@keyframes stampIn{0%{transform:scale(1.5) rotate(-16deg);opacity:0}60%{transform:scale(.94) rotate(-8deg);opacity:1}100%{transform:scale(1) rotate(-8deg);opacity:1}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.rise{animation:riseIn .6s var(--ease) both}
+.rise.d1{animation-delay:.08s}.rise.d2{animation-delay:.16s}.rise.d3{animation-delay:.24s}
+
+/* ================================================================
+   THE GRAFFITI LAYER — spray washes, doodles, ghost outlines.
+   All decorative, all pointer-events:none, all very quiet.
+   ================================================================ */
+.art{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+/* soft spray clouds */
+.wash{position:absolute;border-radius:50%;filter:blur(70px)}
+.w1{width:640px;height:640px;background:radial-gradient(circle,rgba(79,70,229,.10),transparent 62%);top:-200px;right:-120px;animation:drift 28s ease-in-out infinite alternate}
+.w2{width:520px;height:520px;background:radial-gradient(circle,rgba(236,72,153,.07),transparent 62%);top:30%;left:-180px;animation:drift 32s ease-in-out infinite alternate-reverse}
+.w3{width:560px;height:560px;background:radial-gradient(circle,rgba(20,184,166,.08),transparent 62%);bottom:-200px;right:14%;animation:drift 26s ease-in-out infinite alternate}
+.w4{width:380px;height:380px;background:radial-gradient(circle,rgba(245,158,11,.07),transparent 62%);bottom:8%;left:8%}
+/* hand-drawn doodles (SVG scribbles) */
+.doodle{position:absolute;opacity:.5}
+.dl1{top:12%;left:3%;transform:rotate(-10deg)}
+.dl2{top:6%;right:5%;transform:rotate(12deg)}
+.dl3{top:46%;right:2.5%;transform:rotate(6deg)}
+.dl4{bottom:16%;left:2%;transform:rotate(-6deg)}
+.dl5{top:64%;left:44%;transform:rotate(8deg)}
+.dl6{bottom:5%;right:30%;transform:rotate(-9deg)}
+@media(max-width:1100px){.doodle{display:none}}
+/* giant ghost graffiti words — outlined, ultra-faint */
+.ghostword{
+  position:absolute;font-family:'Inter Tight';font-weight:800;letter-spacing:-.02em;
+  color:transparent;-webkit-text-stroke:1.5px rgba(79,70,229,.07);
+  user-select:none;line-height:1;
+}
+.gw1{font-size:clamp(120px,17vw,230px);top:2%;right:-2%;transform:rotate(-4deg)}
+.gw2{font-size:clamp(90px,12vw,170px);bottom:24%;left:-1.5%;transform:rotate(3deg);-webkit-text-stroke-color:rgba(236,72,153,.055)}
+.gw3{font-size:clamp(100px,13vw,190px);bottom:-3%;right:16%;transform:rotate(-2deg);-webkit-text-stroke-color:rgba(20,184,166,.06)}
+@media(max-width:900px){.ghostword{opacity:.5}}
+
+/* ---------- shared ---------- */
+.btn{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:14.5px;padding:12px 24px;border-radius:12px;transition:all .2s var(--ease)}
+.btn:hover{transform:translateY(-1px)}
+.btn-p{background:var(--acc);color:#fff;box-shadow:0 8px 20px -10px rgba(79,70,229,.6)}
+.btn-p:hover{background:var(--acc-d)}
+.btn-o{background:#fff;color:var(--txt);border:1.5px solid var(--line)}
+.btn-o:hover{border-color:#D5D0C6}
+.btn-sm{padding:8px 16px;font-size:13.5px;border-radius:10px}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;white-space:nowrap}
+.p-ok{background:var(--good-bg);color:var(--good)}
+.p-warn{background:var(--warn-bg);color:var(--warn)}
+.p-mut{background:#F1EFE9;color:var(--mut)}
+.tag{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.4px;padding:3px 10px;border-radius:99px}
+.tag.ok{background:var(--good-bg);color:var(--good)}
+.tag.warn{background:var(--warn-bg);color:var(--warn)}
+.tag.crit{background:var(--bad-bg);color:var(--bad)}
+.tag.mut{background:#F1EFE9;color:var(--mut)}
+.wrap{max-width:1120px;margin:0 auto;padding:0 26px}
+
+/* ---------- landing nav ---------- */
+.lnav{position:sticky;top:0;z-index:60;background:rgba(250,249,246,.82);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.lnav-in{display:flex;align-items:center;gap:26px;height:66px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:19px;letter-spacing:-.02em}
+.mark{width:33px;height:33px;border-radius:10px;background:var(--acc);display:grid;place-items:center;flex:none}
+.lnav-links{display:flex;gap:24px;margin-left:auto;font-size:14px;font-weight:500;color:var(--mut)}
+.lnav-links a:hover{color:var(--txt)}
+
+/* ---------- hero ---------- */
+.hero{position:relative;padding:86px 0 78px}
+.hero-grid{display:grid;grid-template-columns:1.06fr .94fr;gap:60px;align-items:center;position:relative;z-index:1}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.85);backdrop-filter:blur(6px);border:1px solid var(--line);border-radius:99px;padding:7px 16px;font-size:13px;font-weight:600;color:var(--mut);box-shadow:var(--sh)}
+.hero-badge svg{color:var(--acc)}
+h1.hero-h{font-size:clamp(42px,5.6vw,66px);font-weight:800;margin:22px 0 20px}
+h1.hero-h em{font-style:normal;background:linear-gradient(95deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
+h1.hero-h .word{display:inline-block;opacity:0;transform:translateY(22px)}
+h1.hero-h .word.in{animation:wordIn .7s var(--ease) both}
+.hero-sub{font-size:17.5px;color:var(--mut);max-width:520px;margin-bottom:30px}
+.hero-cta{display:flex;gap:12px;flex-wrap:wrap}
+.chips{display:flex;gap:9px;flex-wrap:wrap;margin-top:28px}
+.chip{font-size:12.5px;font-weight:600;background:rgba(255,255,255,.8);backdrop-filter:blur(6px);border:1px solid var(--line);border-radius:99px;padding:7px 14px;color:#57534E}
+/* certificate card */
+.cert-wrap{position:relative}
+.cert{background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:22px;padding:26px;box-shadow:var(--sh2);transform-style:preserve-3d;will-change:transform;position:relative}
+.cert::after{content:"";position:absolute;top:-50px;right:-50px;width:190px;height:190px;border-radius:50%;background:radial-gradient(circle,rgba(79,70,229,.1),transparent 70%)}
+.cert-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.cert-k{font-size:10.5px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:var(--faint)}
+.cert-co{font-family:'Inter Tight';font-weight:700;font-size:19px;letter-spacing:-.02em;margin-top:3px}
+.cert-id{font-size:11.5px;color:var(--faint);margin-top:2px}
+.seal-wrap{position:relative;width:76px;height:76px;flex:none}
+.seal-text{position:absolute;inset:0;animation:spinSlow 18s linear infinite}
+.seal-core{position:absolute;inset:14px;border-radius:50%;background:var(--acc);display:grid;place-items:center;color:#fff;box-shadow:0 6px 16px -6px rgba(79,70,229,.6)}
+.cert-rows{margin-top:18px;display:grid;gap:8px}
+.cert-row{display:flex;align-items:center;justify-content:space-between;background:rgba(250,249,246,.85);border:1px solid var(--line2);border-radius:12px;padding:11px 14px;font-size:13.5px;font-weight:600;animation:riseIn .7s var(--ease) both}
+.cert-row:nth-child(2){animation-delay:.1s}.cert-row:nth-child(3){animation-delay:.2s}
+.cert-foot{display:flex;justify-content:space-between;align-items:center;margin-top:16px;font-size:12.5px;color:var(--mut)}
+.float-chip{position:absolute;z-index:2;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border:1px solid var(--acc-line);border-radius:11px;padding:8px 13px;font-size:12px;font-weight:700;color:#3F3C55;box-shadow:0 12px 30px -12px rgba(23,22,26,.22);animation:floatY 5s ease-in-out infinite}
+.fc1{top:-14px;left:-6%;--r:-2deg}.fc2{bottom:18%;right:-6%;animation-delay:1.3s;--r:2deg}.fc3{bottom:-14px;left:8%;animation-delay:2.5s;--r:-1deg}
+.fc3 b{color:var(--good)}
+.liverun{margin-top:14px;background:rgba(250,249,246,.85);border:1px solid var(--line2);border-radius:11px;padding:9px 13px;font-size:11.5px;color:var(--mut);display:flex;align-items:center;gap:8px;font-weight:600}
+.liverun .dot{width:7px;height:7px;border-radius:50%;background:var(--acc);animation:blink 2s infinite}
+.liverun b{color:var(--txt)}
+/* marquee */
+.marquee{overflow:hidden;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:rgba(244,242,237,.75);backdrop-filter:blur(6px);padding:12px 0;position:relative;z-index:1}
+.mq-track{display:flex;gap:52px;width:max-content;animation:mq 34s linear infinite;font-size:11.5px;font-weight:700;letter-spacing:1.8px;color:var(--faint);white-space:nowrap}
+.mq-track b{color:var(--acc);margin-right:8px}
+/* sections */
+.lsec{padding:92px 0;position:relative;z-index:1}
+.kick{font-size:12px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;color:var(--acc);margin-bottom:12px}
+h2.sec-h{font-size:clamp(28px,3.6vw,42px);font-weight:800;margin-bottom:12px}
+h2.sec-h em{font-style:normal;color:var(--acc)}
+.sec-sub{color:var(--mut);max-width:600px;font-size:16.5px}
+.stats4{display:grid;grid-template-columns:repeat(4,1fr);margin-top:44px;background:rgba(255,255,255,.88);backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:20px;overflow:hidden;box-shadow:var(--sh)}
+.stat{padding:28px 26px;border-left:1px solid var(--line2)}
+.stat:first-child{border-left:none}
+.stat .n{font-family:'Inter Tight';font-size:33px;font-weight:800;letter-spacing:-.03em}
+.stat .n em{font-style:normal;color:var(--acc)}
+.stat .l{font-size:13px;color:var(--mut);margin-top:5px;line-height:1.5}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:44px}
+.step{background:rgba(255,255,255,.9);backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:18px;padding:26px;box-shadow:var(--sh);transition:.3s var(--ease)}
+.step:hover{transform:translateY(-4px);border-color:var(--acc-line);box-shadow:var(--sh2)}
+.step .sic{width:42px;height:42px;border-radius:12px;background:var(--acc-bg);color:var(--acc);display:grid;place-items:center;margin-bottom:16px}
+.step .sn{font-size:11px;font-weight:700;letter-spacing:1.6px;color:var(--acc);text-transform:uppercase;margin-bottom:6px}
+.step h3{font-size:17px;font-weight:700;margin-bottom:6px}
+.step p{font-size:13.5px;color:var(--mut)}
+.portals{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:44px}
+.portal{background:rgba(255,255,255,.9);backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:18px;padding:28px;box-shadow:var(--sh);transition:.3s var(--ease)}
+.portal:hover{transform:translateY(-4px);border-color:var(--acc-line);box-shadow:var(--sh2)}
+.portal .pic{width:44px;height:44px;border-radius:12px;background:var(--acc-bg);color:var(--acc);display:grid;place-items:center;margin-bottom:16px}
+.portal .pk{font-size:10.5px;font-weight:700;letter-spacing:1.4px;color:var(--faint);text-transform:uppercase}
+.portal h3{font-size:18px;font-weight:700;margin:4px 0 8px}
+.portal p{font-size:14px;color:var(--mut);margin-bottom:16px}
+.portal a{font-size:13.5px;font-weight:600;color:var(--acc);cursor:pointer}
+.ctaband{margin-top:20px;background:linear-gradient(135deg,rgba(241,239,252,.9),rgba(253,244,236,.9));backdrop-filter:blur(8px);border:1px solid var(--acc-line);border-radius:26px;padding:58px 40px;text-align:center}
+.ctaband p{color:var(--mut);max-width:500px;margin:10px auto 26px}
+footer.lf{border-top:1px solid var(--line);padding:28px 0;font-size:13px;color:var(--faint);position:relative;z-index:1}
+footer.lf .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
+
+/* ---------- auth ---------- */
+#vAuth{display:none;align-items:center;justify-content:center;padding:44px 20px;position:relative}
+#vAuth.active{display:flex}
+.auth-card{width:100%;max-width:430px;background:rgba(255,255,255,.94);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:22px;padding:36px;position:relative;z-index:2;box-shadow:var(--sh2);animation:riseIn .5s var(--ease) both}
+.auth-logo{display:flex;justify-content:center;margin-bottom:14px}
+.auth-card h2{font-size:23px;font-weight:800;text-align:center}
+.asub{text-align:center;color:var(--mut);font-size:13.5px;margin:5px 0 22px}
+.tabs{display:grid;grid-template-columns:1fr 1fr;background:#F1EFE9;border-radius:12px;padding:4px;margin-bottom:20px}
+.tab{padding:9px;border-radius:9px;font-weight:600;font-size:13.5px;color:var(--mut);transition:.2s}
+.tab.on{background:#fff;color:var(--txt);box-shadow:0 1px 4px rgba(23,22,26,.1)}
+.f-label{font-size:12.5px;font-weight:600;color:#57534E;display:block;margin:14px 0 6px}
+.f-input{width:100%;padding:12px 14px;border-radius:11px;border:1.5px solid var(--line);background:#fff;color:var(--txt);font-size:14px;font-family:inherit;transition:.2s;outline:none}
+.f-input:focus{border-color:var(--acc);box-shadow:0 0 0 4px rgba(79,70,229,.1)}
+.btn-full{width:100%;justify-content:center;margin-top:20px}
+.divide{display:flex;align-items:center;gap:12px;color:var(--faint);font-size:11.5px;font-weight:600;margin:20px 0 12px}
+.divide::before,.divide::after{content:"";flex:1;height:1px;background:var(--line)}
+.persona{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.p-btn{background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:14px 12px;text-align:center;transition:.2s}
+.p-btn:hover{border-color:var(--acc);transform:translateY(-2px)}
+.p-btn .pi{width:34px;height:34px;border-radius:10px;background:var(--acc-bg);color:var(--acc);display:grid;place-items:center;margin:0 auto 7px}
+.p-btn .pt{font-weight:700;font-size:13px}
+.p-btn .pd{font-size:11px;color:var(--mut);margin-top:2px}
+.auth-err{display:none;background:var(--bad-bg);border:1px solid #F2CBC8;color:var(--bad);border-radius:11px;padding:10px 14px;font-size:13px;margin-top:14px}
+.auth-alt{text-align:center;font-size:13px;color:var(--mut);margin-top:16px}
+.auth-alt a{color:var(--acc);font-weight:600;cursor:pointer}
+
+/* ---------- dashboard ---------- */
+.dnav{position:sticky;top:0;z-index:60;background:rgba(250,249,246,.85);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.dnav-in{max-width:1020px;margin:0 auto;display:flex;align-items:center;gap:14px;height:62px;padding:0 24px}
+.dnav .org{margin-left:auto;font-size:13px;color:var(--mut);font-weight:500}
+.dash{max-width:1020px;margin:0 auto;padding:30px 24px 90px;position:relative;z-index:1}
+.demo-note{display:inline-flex;align-items:center;gap:7px;background:#FFFBEA;border:1px solid #F1E8C8;color:#8A6D1A;font-size:11.5px;font-weight:600;padding:5px 13px;border-radius:99px;margin-bottom:18px}
+.greet{font-size:26px;font-weight:800;margin-bottom:20px}
+.verdict{background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:22px;padding:28px 32px;margin-bottom:18px;box-shadow:var(--sh);display:flex;gap:28px;align-items:center;flex-wrap:wrap}
+.vring{width:106px;height:106px;flex:none;position:relative;display:grid;place-items:center}
+.vring svg{position:absolute;inset:0;transform:rotate(-90deg)}
+.vbadge{width:60px;height:60px;border-radius:50%;display:grid;place-items:center;font-size:24px;font-weight:800;background:var(--vbg);color:var(--vfg);transition:.4s;animation:riseIn .5s var(--ease) both}
+.vbody{flex:1;min-width:260px}
+.vq{font-size:11px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:var(--faint)}
+.vtitle{font-size:22px;font-weight:800;margin:5px 0 6px;color:var(--vfg2)}
+.vdesc{color:var(--mut);font-size:14.5px;max-width:560px}
+.verdict.v-amber{--vbg:var(--warn-bg);--vfg:var(--warn);--vfg2:#8A5A0B}
+.verdict.v-green{--vbg:var(--good-bg);--vfg:var(--good);--vfg2:var(--good)}
+.nums{background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:20px;padding:6px;margin-bottom:18px;box-shadow:var(--sh);display:grid;grid-template-columns:repeat(4,1fr)}
+.num{padding:20px 24px;border-left:1px solid var(--line2);transition:background .2s}
+.num:first-child{border-left:none}
+.num:hover{background:#FCFBF8}
+.nl{font-size:11px;font-weight:600;color:var(--faint);margin-bottom:3px}
+.nv{font-family:'Inter Tight';font-size:24px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.nv .u{color:var(--acc)}
+.ns{font-size:12px;color:var(--mut);margin-top:2px}
+.dgrid{display:grid;grid-template-columns:1fr 330px;gap:18px;align-items:start}
+.panel{background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:20px;box-shadow:var(--sh);overflow:hidden;margin-bottom:18px}
+.panel-h{display:flex;align-items:center;justify-content:space-between;padding:18px 26px;border-bottom:1px solid var(--line2);gap:12px;flex-wrap:wrap}
+.panel-h h3{font-size:16px;font-weight:700;display:flex;align-items:center;gap:10px}
+.ph-sub{font-size:12.5px;color:var(--mut);margin-top:2px}
+.count-bubble{min-width:24px;height:24px;border-radius:99px;background:var(--warn-bg);color:var(--warn);display:inline-grid;place-items:center;font-size:12px;font-weight:700;padding:0 8px}
+.task{display:flex;gap:15px;padding:18px 26px;border-bottom:1px solid var(--line2);align-items:flex-start;transition:background .15s;cursor:pointer}
+.task:last-child{border-bottom:none}
+.task:hover{background:#FCFBF8}
+.tico{width:42px;height:42px;border-radius:12px;flex:none;display:grid;place-items:center;font-size:16px;font-weight:800}
+.tico.t-warn{background:var(--warn-bg);color:var(--warn)}
+.tico.t-bad{background:var(--bad-bg);color:var(--bad)}
+.tico.t-ok{background:var(--good-bg);color:var(--good)}
+.tbody{flex:1;min-width:0}
+.tt{font-weight:700;font-size:14.5px}
+.td{font-size:12.5px;color:var(--mut);margin-top:2px}
+.tmeta{display:flex;gap:8px;margin-top:9px;flex-wrap:wrap;align-items:center}
+.tamt{font-weight:600;font-size:13.5px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.task-done{opacity:.5}
+.task-done .tt{text-decoration:line-through}
+.empty-ok{display:none;padding:32px 26px;text-align:center;color:var(--good);font-weight:700}
+.engine{background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:20px;box-shadow:var(--sh);padding:20px 26px;margin-bottom:18px;display:flex;align-items:center;gap:15px;flex-wrap:wrap}
+.eico{width:42px;height:42px;border-radius:12px;background:var(--acc-bg);color:var(--acc);display:grid;place-items:center;flex:none}
+.et{font-weight:700;font-size:15px}
+.ed{font-size:12.5px;color:var(--mut)}
+.eright{margin-left:auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+select{padding:10px 13px;border-radius:11px;border:1.5px solid var(--line);font-family:inherit;font-weight:600;font-size:13px;background:#fff;color:var(--txt);outline:none}
+.pipe{display:none;width:100%;border-top:1px dashed var(--line);margin-top:14px;padding-top:14px}
+.pipe-steps{display:flex;gap:8px;flex-wrap:wrap}
+.p-step{display:flex;align-items:center;gap:7px;font-size:11.5px;font-weight:600;color:var(--faint);background:#FAF9F6;border:1px solid var(--line2);border-radius:99px;padding:5px 12px;transition:.3s}
+.p-step .pdot{width:6px;height:6px;border-radius:50%;background:#D8D3C9;transition:.3s}
+.p-step.on{color:var(--acc-d);border-color:var(--acc-line);background:var(--acc-bg)}
+.p-step.on .pdot{background:var(--acc);animation:blink 1s infinite}
+.p-step.done{color:var(--good);background:var(--good-bg);border-color:var(--good-line)}
+.p-step.done .pdot{background:var(--good)}
+.engmsg{display:none;width:100%;margin-top:12px;font-size:13px;font-weight:600;padding:11px 15px;border-radius:12px}
+.engmsg.good{display:block;background:var(--good-bg);color:var(--good);border:1px solid var(--good-line)}
+.engmsg.warn{display:block;background:var(--warn-bg);color:var(--warn);border:1px solid var(--warn-line)}
+.upl{display:flex;gap:14px;padding:16px 26px;border-bottom:1px solid var(--line2);align-items:center;flex-wrap:wrap}
+.upl:last-child{border-bottom:none}
+.uico{width:40px;height:40px;border-radius:11px;background:var(--acc-bg);color:var(--acc);display:grid;place-items:center;flex:none}
+.ut{font-weight:600;font-size:13.5px}
+.ud{font-size:12px;color:var(--mut);margin-top:1px}
+.ust{margin-left:auto}
+.rail{position:sticky;top:86px;display:grid;gap:18px}
+.tl{padding:16px 22px 20px}
+.tl-it{display:flex;gap:13px;position:relative;padding-bottom:20px}
+.tl-it:last-child{padding-bottom:0}
+.tl-it::before{content:"";position:absolute;left:12px;top:28px;bottom:-2px;width:2px;background:var(--line2)}
+.tl-it:last-child::before{display:none}
+.tl-it.done::before{background:var(--good)}
+.tdot{width:25px;height:25px;border-radius:50%;flex:none;display:grid;place-items:center;font-size:11px;font-weight:800;background:#fff;border:2px solid var(--line);color:var(--faint);z-index:1;transition:.3s}
+.tl-it.done .tdot{background:var(--good);border-color:var(--good);color:#fff}
+.tl-it.cur .tdot{background:var(--acc);border-color:var(--acc);color:#fff;box-shadow:0 0 0 4px var(--acc-bg)}
+.tl-it.cur::before{background:var(--acc-line)}
+.tt2{font-weight:700;font-size:13.5px;margin-top:3px}
+.tw{font-size:11.5px;color:var(--faint)}
+.tw.acc{color:var(--acc);font-weight:600}
+.certlink{font-size:12px;font-weight:600;color:var(--acc);word-break:break-all;cursor:pointer}
+.stamp{font-family:'Inter Tight';font-weight:800;font-size:13px;color:var(--good);border:2px solid var(--good);border-radius:9px;padding:3px 12px;transform:rotate(-6deg);display:none;letter-spacing:.5px;background:var(--good-bg)}
+.stamp.show{display:inline-block;animation:stampIn .5s var(--ease) both}
+/* ---------- verify ---------- */
+.vsearch{max-width:640px;margin:0 auto}
+.vbox{display:flex;gap:10px;margin:26px 0 14px}
+.vbox input{flex:1;padding:15px 18px;border-radius:13px;border:1.5px solid var(--line);font-family:'JetBrains Mono';font-size:14px;background:#fff;outline:none;transition:.2s}
+.vbox input:focus{border-color:var(--acc);box-shadow:0 0 0 4px rgba(79,70,229,.1)}
+.vcard{background:rgba(255,255,255,.94);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:22px;padding:30px;box-shadow:var(--sh2);animation:riseIn .4s var(--ease) both}
+.vstatus{display:inline-flex;align-items:center;gap:8px;background:var(--good-bg);color:var(--good);font-weight:800;font-size:13px;padding:6px 14px;border-radius:99px;margin-bottom:16px}
+.vco{font-family:'Inter Tight';font-size:26px;font-weight:800;letter-spacing:-.02em}
+.vrows{margin:18px 0;display:grid;border:1px solid var(--line2);border-radius:14px;overflow:hidden}
+.vrow{display:flex;justify-content:space-between;gap:14px;padding:12px 16px;border-bottom:1px solid var(--line2);font-size:13.5px}
+.vrow:last-child{border-bottom:none}
+.vrow .vk{color:var(--mut);font-weight:500}
+.vrow .vv{font-weight:600;text-align:right}
+.scopebox{background:#FAF9F6;border:1px solid var(--line2);border-radius:14px;padding:15px 18px;font-size:12.5px;color:var(--mut);line-height:1.6}
+.scopebox b{color:var(--txt)}
+.vwarn-card{background:rgba(255,255,255,.94);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:20px;padding:34px;text-align:center;animation:riseIn .4s var(--ease) both}
+/* ---------- modal / toast ---------- */
+.overlay{position:fixed;inset:0;background:rgba(23,22,26,.42);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
+.overlay.open{display:flex}
+.modal{background:#fff;border-radius:20px;max-width:560px;width:100%;padding:30px;max-height:86vh;overflow:auto;animation:riseIn .32s var(--ease) both;box-shadow:0 30px 80px -20px rgba(23,22,26,.4)}
+.modal h3{font-size:20px;font-weight:800;margin:10px 0 4px}
+.msub{color:var(--mut);font-size:12.5px;margin-bottom:16px}
+.mrow{background:#FAF9F6;border:1px solid var(--line2);border-radius:13px;padding:13px 16px;margin:9px 0}
+.mrow .ml{font-size:10.5px;font-weight:700;letter-spacing:1.1px;color:var(--faint);text-transform:uppercase}
+.mrow .mv{font-size:14px;margin-top:3px;line-height:1.55}
+.toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--txt);color:#fff;padding:12px 24px;border-radius:12px;font-size:13.5px;font-weight:600;opacity:0;transition:.35s var(--ease);z-index:200;max-width:90vw;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(max-width:960px){
+  .hero-grid,.dgrid{grid-template-columns:1fr}
+  .stats4{grid-template-columns:1fr 1fr}
+  .stat:nth-child(3){border-left:none}.stat:nth-child(1),.stat:nth-child(2){border-bottom:1px solid var(--line2)}
+  .steps,.portals{grid-template-columns:1fr}
+  .nums{grid-template-columns:1fr 1fr}
+  .num:nth-child(3){border-left:none}.num:nth-child(1),.num:nth-child(2){border-bottom:1px solid var(--line2)}
+  .rail{position:static}
+  .lnav-links{display:none}
+  .vring{display:none}
+}
+@media(max-width:560px){.stats4,.nums{grid-template-columns:1fr}.stat,.num{border-left:none!important;border-top:1px solid var(--line2)}.stat:first-child,.num:first-child{border-top:none}}
+</style>
+</head>
+<body>
+
+<!-- ============ THE BLENDED GRAFFITI LAYER (fixed, behind everything) ============ -->
+<div class="art" aria-hidden="true">
+  <div class="wash w1"></div><div class="wash w2"></div><div class="wash w3"></div><div class="wash w4"></div>
+  <div class="ghostword gw1">TRUST</div>
+  <div class="ghostword gw2">✓ 100%</div>
+  <div class="ghostword gw3">VERIFIED</div>
+  <!-- hand-drawn doodles -->
+  <svg class="doodle dl1" width="90" height="90" viewBox="0 0 90 90" fill="none"><path d="M45 8l8 22 24 2-18 16 6 24-20-13-20 13 6-24-18-16 24-2z" stroke="#4F46E5" stroke-width="2.5" stroke-linejoin="round" opacity=".18"/></svg>
+  <svg class="doodle dl2" width="110" height="60" viewBox="0 0 110 60" fill="none"><path d="M4 40 C 30 10, 60 54, 106 18" stroke="#EC4899" stroke-width="2.5" stroke-linecap="round" opacity=".22"/><path d="M96 12l10 6-12 4" stroke="#EC4899" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity=".22"/></svg>
+  <svg class="doodle dl3" width="80" height="80" viewBox="0 0 80 80" fill="none"><circle cx="40" cy="40" r="30" stroke="#14B8A6" stroke-width="2.5" opacity=".2"/><path d="M28 41l8 8 16-18" stroke="#14B8A6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity=".28"/></svg>
+  <svg class="doodle dl4" width="100" height="34" viewBox="0 0 100 34" fill="none"><path d="M3 24 C 20 4, 34 30, 50 14 S 82 6, 97 20" stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round" opacity=".24"/></svg>
+  <svg class="doodle dl5" width="70" height="70" viewBox="0 0 70 70" fill="none"><path d="M35 6v14M35 50v14M6 35h14M50 35h14M14 14l10 10M46 46l10 10M56 14L46 24M24 46L14 56" stroke="#4F46E5" stroke-width="2.5" stroke-linecap="round" opacity=".14"/></svg>
+  <svg class="doodle dl6" width="120" height="46" viewBox="0 0 120 46" fill="none"><path d="M6 36 C 26 8, 44 40, 62 20 S 98 10, 114 26" stroke="#EC4899" stroke-width="2.5" stroke-linecap="round" opacity=".18"/><path d="M104 20l10 6-12 4" stroke="#EC4899" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity=".18"/></svg>
+</div>
+
+<!-- ==================== LANDING ==================== -->
+<div class="view active" id="vLanding">
+  <nav class="lnav"><div class="wrap lnav-in">
+    <span class="logo"><span class="mark"><svg width="17" height="17" viewBox="0 0 32 32"><path d="M11 16.5l4 4 9.5-11" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Attest</span>
+    <div class="lnav-links"><a href="#how">How it works</a><a href="#who">Who it's for</a><a onclick="openVerify('')" style="cursor:pointer">Verify</a></div>
+    <button class="btn btn-o btn-sm" onclick="showAuth('login')">Sign in</button>
+    <button class="btn btn-p btn-sm" onclick="showAuth('signup')">Get started</button>
+  </div></nav>
+
+  <header class="hero"><div class="wrap hero-grid">
+    <div>
+      <span class="hero-badge rise"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 4v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V7l7-4z"/><path d="M9 12l2 2 4-4"/></svg>Verify once. Trusted by every bank.</span>
+      <h1 class="hero-h" aria-label="Can you believe these numbers?"><span class="word">Can</span> <span class="word">you</span> <span class="word">believe</span><br><span class="word">these</span> <span class="word"><em>numbers?</em></span></h1>
+      <p class="hero-sub">Attest checks a company's financial records <b style="color:var(--txt)">every day</b> — every transaction, across bank, books and invoices. A licensed chartered accountant signs. Anyone can verify the result in seconds.</p>
+      <div class="hero-cta">
+        <button class="btn btn-p" onclick="showAuth('signup')">Get started →</button>
+        <button class="btn btn-o" onclick="openVerify('ATTEST-PK-2026-406434-0A')">🔍 Verify a sample</button>
+      </div>
+      <div class="chips">
+        <span class="chip">✓ Signed by a licensed CA</span>
+        <span class="chip">✓ 100% of transactions, not a sample</span>
+        <span class="chip">✓ Live — refreshed daily</span>
+      </div>
+    </div>
+    <div class="cert-wrap">
+      <div class="float-chip fc1">✓ Bank ↔ Ledger matched</div>
+      <div class="float-chip fc2">✓ CA signature verified</div>
+      <div class="float-chip fc3">✓ <b>Zero</b> open exceptions</div>
+      <div class="cert" data-tilt="6">
+        <div class="cert-top">
+          <div><div class="cert-k">Trust Certificate</div><div class="cert-co">Meridian Textiles (Pvt) Ltd</div><div class="cert-id mono">ATTEST-PK-2026-406434-0A</div></div>
+          <div class="seal-wrap">
+            <svg class="seal-text" viewBox="0 0 76 76"><defs><path id="circ" d="M38,38 m-32,0 a32,32 0 1,1 64,0 a32,32 0 1,1 -64,0"/></defs><text style="font-size:8.2px;font-weight:700;letter-spacing:1.6px;fill:var(--acc)"><textPath href="#circ">CA SIGNED · VERIFIED · ATTEST · LIVE ·</textPath></text></svg>
+            <div class="seal-core"><svg width="20" height="20" viewBox="0 0 32 32"><path d="M11 16.5l4 4 9.5-11" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          </div>
+        </div>
+        <div class="cert-rows">
+          <div class="cert-row"><span>Bank ↔ Ledger reconciliation</span><span class="pill p-ok">✓ PASS · 100%</span></div>
+          <div class="cert-row"><span>Revenue ↔ FBR e-invoices</span><span class="pill p-ok">✓ PASS · 3-way</span></div>
+          <div class="cert-row"><span>Open exceptions</span><span class="pill p-ok">0</span></div>
+        </div>
+        <div class="cert-foot"><span>Signed: <b style="color:var(--txt)">Kamran R. Sheikh, FCA</b></span><span class="pill p-ok">Valid</span></div>
+        <div class="liverun"><span class="dot"></span><b>Daily run</b><span id="lc">—</span><span style="margin-left:auto">next in <b id="nr">—</b></span></div>
+      </div>
+    </div>
+  </div></header>
+
+  <div class="marquee"><div class="mq-track">
+    <span><b>✓</b>100% POPULATION TESTED</span><span><b>✓</b>BANK ↔ LEDGER RECONCILED</span><span><b>✓</b>CA-SIGNED CERTIFICATE</span><span><b>✓</b>VERIFY IN SECONDS — NO LOGIN</span><span><b>✓</b>TAMPER-EVIDENT AUDIT TRAIL</span><span><b>✓</b>REFRESHED DAILY</span>
+    <span><b>✓</b>100% POPULATION TESTED</span><span><b>✓</b>BANK ↔ LEDGER RECONCILED</span><span><b>✓</b>CA-SIGNED CERTIFICATE</span><span><b>✓</b>VERIFY IN SECONDS — NO LOGIN</span><span><b>✓</b>TAMPER-EVIDENT AUDIT TRAIL</span><span><b>✓</b>REFRESHED DAILY</span>
+  </div></div>
+
+  <section class="lsec" id="how"><div class="wrap">
+    <div class="kick">How it works</div>
+    <h2 class="sec-h">Three steps. <em>No spreadsheets.</em></h2>
+    <p class="sec-sub">From shoebox documents to a signed certificate — the machine does the reading, a professional does the judging.</p>
+    <div class="steps">
+      <div class="step rise"><div class="sic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17H7A5 5 0 0 1 7 7h2M15 7h2a5 5 0 0 1 0 10h-2M8 12h8"/></svg></div><div class="sn">Step 1</div><h3>Connect sources</h3><p>Bank statements, your books and FBR e-invoices — read-only, consented, fingerprint-sealed on arrival.</p></div>
+      <div class="step rise d1"><div class="sic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg></div><div class="sn">Step 2</div><h3>AI checks 100% daily</h3><p>Every transaction compared across sources. AI proposes; deterministic code validates; mismatches become simple questions.</p></div>
+      <div class="step rise d2"><div class="sic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 15l2 2 4-4"/></svg></div><div class="sn">Step 3</div><h3>CA signs → live certificate</h3><p>A licensed chartered accountant reviews the evidence and signs. Any bank verifies the result in seconds — no login.</p></div>
+    </div>
+  </div></section>
+
+  <section class="lsec" style="padding-top:20px" id="who"><div class="wrap">
+    <div class="kick">One certificate, three sides of the table</div>
+    <h2 class="sec-h">Built for the <em>whole</em> trust triangle.</h2>
+    <div class="portals">
+      <div class="portal"><div class="pic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg></div><div class="pk">For businesses</div><h3>Client Portal</h3><p>See your verdict in plain language, answer questions, share one certificate with every lender.</p><a onclick="showAuth('login')">Open portal →</a></div>
+      <div class="portal"><div class="pic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg></div><div class="pk">For accounting firms</div><h3>CA Console</h3><p>Review exceptions with evidence attached, sign certificates and serve more clients.</p><a onclick="loginAs('ca')">Open console →</a></div>
+      <div class="portal"><div class="pic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M4 18h16M6 18v-7M10 18v-7M14 18v-7M18 18v-7M4 11l8-6 8 6"/></svg></div><div class="pk">For banks — no login</div><h3>Public Verifier</h3><p>Enter a certificate ID and confirm status, scope and signer in seconds.</p><a onclick="openVerify('ATTEST-PK-2026-406434-0A')">Verify a certificate →</a></div>
+    </div>
+    <div class="ctaband">
+      <h2 class="sec-h" style="margin-bottom:0">Stop being a stranger <em>to your own bank.</em></h2>
+      <p>Join the pilot cohort. Your first verified certificate takes 48 hours — and it's yours to carry anywhere.</p>
+      <button class="btn btn-p" onclick="showAuth('signup')">Get your company verified →</button>
+    </div>
+  </div></section>
+
+  <footer class="lf"><div class="wrap">
+    <span class="logo" style="font-size:16px"><span class="mark" style="width:26px;height:26px;border-radius:8px"><svg width="13" height="13" viewBox="0 0 32 32"><path d="M11 16.5l4 4 9.5-11" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Attest</span>
+    <span>Limited assurance. Not a statutory audit. · Demo — all data fictional.</span>
+  </div></footer>
+</div>
+
+<!-- ==================== AUTH ==================== -->
+<div class="view" id="vAuth">
+  <div class="auth-card">
+    <div class="auth-logo"><span class="logo"><span class="mark"><svg width="16" height="16" viewBox="0 0 32 32"><path d="M11 16.5l4 4 9.5-11" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Attest</span></div>
+    <h2 id="authTitle">Welcome back</h2>
+    <p class="asub" id="authSub">Sign in to your assurance workspace</p>
+    <div class="tabs">
+      <button class="tab on" id="tabLogin" onclick="authTab('login')">Sign in</button>
+      <button class="tab" id="tabSignup" onclick="authTab('signup')">Sign up</button>
+    </div>
+    <div id="signupFields" style="display:none">
+      <label class="f-label">Full name</label>
+      <input class="f-input" id="fName" placeholder="Tariq Mahmood">
+    </div>
+    <label class="f-label">Email</label>
+    <input class="f-input" id="fEmail" type="email" value="demo@attest.pk">
+    <label class="f-label">Password</label>
+    <input class="f-input" id="fPass" type="password" value="Demo1234!">
+    <div class="auth-err" id="authErr"></div>
+    <button class="btn btn-p btn-full" id="authBtn" onclick="doAuth()">Sign in →</button>
+    <div class="divide">or try a demo</div>
+    <div class="persona">
+      <button class="p-btn" onclick="loginAs('owner')"><div class="pi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg></div><div class="pt">Business Owner</div><div class="pd">Meridian Textiles</div></button>
+      <button class="p-btn" onclick="loginAs('ca')"><div class="pi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg></div><div class="pt">CA Reviewer</div><div class="pd">Licensed professional</div></button>
+    </div>
+    <p class="auth-alt"><a onclick="showLanding()" style="color:var(--faint)">← Back to site</a></p>
+  </div>
+</div>
+
+<!-- ==================== DASHBOARD ==================== -->
+<div class="view" id="vDash">
+  <nav class="dnav"><div class="dnav-in">
+    <span class="logo" style="font-size:17px"><span class="mark" style="width:29px;height:29px;border-radius:9px"><svg width="15" height="15" viewBox="0 0 32 32"><path d="M11 16.5l4 4 9.5-11" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Attest</span>
+    <span class="org">Meridian Textiles (Pvt) Ltd</span>
+    <button class="btn btn-o btn-sm" onclick="logout()">⎋ Sign out</button>
+  </div></nav>
+
+  <div class="dash">
+    <div class="demo-note">⚠ Demo data — all companies, figures and people are fictional</div>
+    <h1 class="greet rise" id="greet">Good morning, Tariq</h1>
+
+    <div class="verdict v-amber rise" id="verdict">
+      <div class="vring">
+        <svg width="106" height="106"><circle cx="53" cy="53" r="46" fill="none" stroke="var(--line2)" stroke-width="9"/><circle id="vArc" cx="53" cy="53" r="46" fill="none" stroke="#B45309" stroke-width="9" stroke-linecap="round" stroke-dasharray="289" stroke-dashoffset="80" style="transition:stroke-dashoffset 1.4s var(--ease)"/></svg>
+        <div class="vbadge" id="vBadge">2</div>
+      </div>
+      <div class="vbody">
+        <div class="vq">Your verification status · April 2026</div>
+        <div class="vtitle" id="vTitle">Almost there — 2 things need your attention</div>
+        <div class="vdesc" id="vDesc">Your bank statement and your books have been checked — and they agree. Two money questions are waiting for your answer. Once they're cleared, your chartered accountant can sign your certificate.</div>
+        <div style="margin-top:14px"><button class="btn btn-p btn-sm" onclick="document.getElementById('taskPanel').scrollIntoView({behavior:'smooth'})" id="vNext">Next step: answer the questions below — about 5 minutes →</button></div>
+      </div>
+    </div>
+
+    <div class="nums rise d1">
+      <div class="num"><div class="nl">Money in bank (verified)</div><div class="nv" id="nBal">PKR 0</div><div class="ns">statement arithmetic ✓</div></div>
+      <div class="num"><div class="nl">Records that match</div><div class="nv" id="nMatch">0%</div><div class="ns" id="nMatchS">7 of 8 checked</div></div>
+      <div class="num"><div class="nl">Questions for you</div><div class="nv" id="nExc">2</div><div class="ns" id="nExcS">each takes ~2 minutes</div></div>
+      <div class="num"><div class="nl">Certificate</div><div class="nv" id="nCert">Pending</div><div class="ns" id="nCertS">signing waits on your answers</div></div>
+    </div>
+
+    <div class="dgrid">
+      <div>
+        <div class="panel rise d1" id="taskPanel">
+          <div class="panel-h"><div><h3><span class="count-bubble" id="taskCount">2</span> Things waiting for you</h3><div class="ph-sub">Simple questions about your money — each answer moves your certificate forward</div></div></div>
+          <div id="taskList"></div>
+          <div class="empty-ok" id="taskEmpty">✓ Nothing waiting — your file has gone to your CA for signing</div>
+        </div>
+
+        <div class="engine rise d1">
+          <div class="eico"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5-11-6.5z"/></svg></div>
+          <div><div class="et">The checking machine</div><div class="ed">Runs quietly every day — compares your bank, your books and your invoices</div></div>
+          <div class="eright">
+            <select><option>April 2026</option><option>March 2026</option></select>
+            <button class="btn btn-p btn-sm" id="runBtn" onclick="runEngine()">Check my numbers ▸</button>
+          </div>
+          <div class="pipe" id="pipe">
+            <div class="pipe-steps">
+              <span class="p-step"><span class="pdot"></span>Reading documents</span>
+              <span class="p-step"><span class="pdot"></span>Checking the math</span>
+              <span class="p-step"><span class="pdot"></span>Understanding entries</span>
+              <span class="p-step"><span class="pdot"></span>Matching bank ↔ books</span>
+              <span class="p-step"><span class="pdot"></span>Checking invoices</span>
+              <span class="p-step"><span class="pdot"></span>Preparing questions</span>
+            </div>
+            <div class="engmsg" id="engMsg"></div>
+          </div>
+        </div>
+
+        <div class="panel rise d2">
+          <div class="panel-h"><div><h3>Your documents</h3><div class="ph-sub">What we hold from you — and how it arrived</div></div><button class="btn btn-o btn-sm" onclick="toast('Opens the upload screen in the full app')">＋ Add document</button></div>
+          <div class="upl"><div class="uico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M4 18h16M6 18v-7M10 18v-7M14 18v-7M18 18v-7M4 11l8-6 8 6"/></svg></div><div><div class="ut">Bank statement — HBL, April 2026</div><div class="ud">Arrived from your bank's own email · fingerprint-sealed</div></div><div class="upl ust"><span class="tag ok">✓ VERIFIED</span></div></div>
+          <div class="upl"><div class="uico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5v14z"/></svg></div><div><div class="ut">General ledger — April 2026</div><div class="ud">Exported from your accounting software · fingerprint-sealed</div></div><div class="upl ust"><span class="tag ok">✓ VERIFIED</span></div></div>
+          <div class="upl"><div class="uico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8"/></svg></div><div><div class="ut">Sales invoices — FBR e-invoicing</div><div class="ud">Pulled directly from FBR · fingerprint-sealed</div></div><div class="upl ust"><span class="tag ok">✓ VERIFIED</span></div></div>
+        </div>
+      </div>
+
+      <div class="rail">
+        <div class="panel rise d1">
+          <div class="panel-h"><div><h3>Your Trust Certificate</h3><div class="ph-sub mono" style="font-size:11px">ATTEST-PK-2026-406434-0A</div></div></div>
+          <div class="tl">
+            <div class="tl-it done"><span class="tdot">✓</span><div><div class="tt2">Documents received</div><div class="tw">3 sources · sealed</div></div></div>
+            <div class="tl-it done"><span class="tdot">✓</span><div><div class="tt2">Numbers checked</div><div class="tw">arithmetic 100% ✓</div></div></div>
+            <div class="tl-it cur" id="tlRes"><span class="tdot" id="tlResDot">3</span><div><div class="tt2">Questions answered</div><div class="tw acc" id="tlResSub">Waiting on you</div></div></div>
+            <div class="tl-it" id="tlSign"><span class="tdot">4</span><div><div class="tt2">CA signs</div><div class="tw">Kamran R. Sheikh, FCA</div></div></div>
+            <div class="tl-it" id="tlLive"><span class="tdot">5</span><div><div class="tt2">Live for banks</div><div class="tw">public · no login</div></div></div>
+          </div>
+          <div style="padding:0 22px 20px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+              <span class="stamp" id="stamp">CA VERIFIED ✓</span>
+              <span class="pill p-mut" id="certPill">PENDING</span>
+            </div>
+            <div class="certlink" onclick="openVerify('ATTEST-PK-2026-406434-0A')">attest.pk/verify/ATTEST-PK-2026-406434-0A ↗</div>
+          </div>
+        </div>
+
+        <div class="panel rise d2">
+          <div class="panel-h"><h3>Recent activity</h3></div>
+          <div class="tl">
+            <div class="tl-it done"><span class="tdot">·</span><div><div class="tt2" style="font-size:13px">Engine run — 2 questions raised</div><div class="tw">just now</div></div></div>
+            <div class="tl-it done"><span class="tdot">·</span><div><div class="tt2" style="font-size:13px">Statement validated — arithmetic ✓</div><div class="tw">06:00 today</div></div></div>
+            <div class="tl-it done"><span class="tdot" style="border-color:var(--line)">·</span><div><div class="tt2" style="font-size:13px">HBL statement received & sealed</div><div class="tw">yesterday</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== VERIFY ==================== -->
+<div class="view" id="vVerify">
+  <nav class="lnav"><div class="wrap lnav-in">
+    <span class="logo" onclick="showLanding()" style="cursor:pointer"><span class="mark"><svg width="17" height="17" viewBox="0 0 32 32"><path d="M11 16.5l4 4 9.5-11" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Attest</span>
+    <button class="btn btn-o btn-sm" style="margin-left:auto" onclick="showLanding()">← Back to site</button>
+  </div></nav>
+
+  <section class="lsec" style="padding-top:70px"><div class="wrap">
+    <div class="vsearch">
+      <div class="kick" style="text-align:center;display:block">Public verification · no login needed</div>
+      <h2 class="sec-h" style="text-align:center">Check a certificate.</h2>
+      <p class="sec-sub" style="text-align:center;margin:0 auto">Enter the certificate ID printed on the document. The result is verified cryptographically against the official record.</p>
+      <div class="vbox">
+        <input id="vInput" placeholder="ATTEST-PK-2026-XXXXXX-XX" value="ATTEST-PK-2026-406434-0A" spellcheck="false">
+        <button class="btn btn-p" onclick="doVerify()">Verify ▸</button>
+      </div>
+      <div class="vresult" id="vResult"></div>
+    </div>
+  </div></section>
+</div>
+
+<!-- QUESTION MODAL -->
+<div class="overlay" id="qModal"><div class="modal">
+  <span class="tag" id="mTag">HIGH</span>
+  <h3 id="mTitle">—</h3>
+  <p class="msub" id="mRef">—</p>
+  <div class="mrow"><div class="ml">What we noticed</div><div class="mv" id="mWhat">—</div></div>
+  <div class="mrow"><div class="ml">Why it matters to you</div><div class="mv" id="mWhy">—</div></div>
+  <div class="mrow"><div class="ml">How to clear it</div><div class="mv" id="mFix">—</div></div>
+  <div style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end">
+    <button class="btn btn-o btn-sm" onclick="closeQ()">Do it later</button>
+    <button class="btn btn-p btn-sm" id="mBtn" onclick="resolveCurrent()">I'll answer this now →</button>
+  </div>
+</div></div>
+
+<div class="toast" id="toastEl"></div>
+
+<script>
+window.onerror=function(m,s,l){var t=document.getElementById("toastEl");if(t){t.textContent="Script error (line "+l+")";t.className="toast show";setTimeout(function(){t.classList.remove("show")},6000)}return false};
+function $(i){return document.getElementById(i)}
+function toast(m){var t=$("toastEl");t.textContent=m;t.className="toast show";clearTimeout(t._h);t._h=setTimeout(function(){t.classList.remove("show")},2800)}
+function showView(id){document.querySelectorAll(".view").forEach(function(v){v.classList.remove("active")});$(id).classList.add("active");window.scrollTo(0,0);if(id==="vDash")animateStats()}
+function showLanding(){showView("vLanding")}
+function showAuth(m){authTab(m);showView("vAuth")}
+function openVerify(id){showView("vVerify");if(id){$("vInput").value=id;setTimeout(doVerify,350)}else{$("vInput").value="";$("vResult").innerHTML=""}}
+var authMode="login";
+function authTab(m){authMode=m;
+  $("tabLogin").classList.toggle("on",m==="login");$("tabSignup").classList.toggle("on",m==="signup");
+  $("signupFields").style.display=(m==="signup")?"block":"none";
+  $("authTitle").textContent=(m==="signup")?"Create your workspace":"Welcome back";
+  $("authSub").textContent=(m==="signup")?"Free during the pilot — your first certificate in 48 hours":"Sign in to your assurance workspace";
+  $("authBtn").textContent=(m==="signup")?"Create account →":"Sign in →";
+  $("authErr").style.display="none";
+}
+function loginAs(r){enterDash(r)}
+function doAuth(){
+  var em=$("fEmail").value.trim(),pw=$("fPass").value;
+  if(!em||!pw){var e=$("authErr");e.textContent="Please enter your email and password.";e.style.display="block";return}
+  var b=$("authBtn");b.disabled=true;b.textContent="Signing in…";
+  setTimeout(function(){b.disabled=false;b.textContent=(authMode==="signup")?"Create account →":"Sign in →";enterDash("owner")},800);
+}
+function enterDash(role){
+  if(role==="ca"){$("greet").textContent="Review queue, Kamran";}
+  else{$("greet").textContent="Good morning, Tariq";}
+  showView("vDash");
+}
+function logout(){toast("Signed out — see you soon");showLanding()}
+(function(){var w=document.querySelectorAll(".hero-h .word");for(var i=0;i<w.length;i++){(function(el,idx){setTimeout(function(){el.classList.add("in")},220+idx*95)})(w[i],i)}})();
+function p2(n){return(n<10?"0":"")+n}
+setInterval(function(){var el=$("lc"),nx=$("nr");if(!el)return;var now=new Date();
+  el.textContent=p2(now.getHours())+":"+p2(now.getMinutes())+":"+p2(now.getSeconds());
+  var next=new Date();next.setHours(6,0,0,0);if(next<=now)next.setDate(next.getDate()+1);
+  var s=Math.floor((next-now)/1000);nx.textContent=Math.floor(s/3600)+"h "+Math.floor((s%3600)/60)+"m";},1000);
+(function(){var els=document.querySelectorAll("[data-tilt]");for(var i=0;i<els.length;i++){(function(el){
+  var max=parseFloat(el.getAttribute("data-tilt"))||6;
+  el.addEventListener("mousemove",function(e){var r=el.getBoundingClientRect();var x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;
+    el.style.transform="perspective(1000px) rotateX("+(-y*max).toFixed(2)+"deg) rotateY("+(x*max).toFixed(2)+"deg)"});
+  el.addEventListener("mouseleave",function(){el.style.transform=""})})(els[i])}})();
+var TASKS=[
+ {id:"E-101",sev:"warn",tico:"t-warn",tagTxt:"WORTH CHECKING",amt:"PKR 118,500",title:"You paid Zubair Traders twice — PKR 118,500",
+  d:"Two identical debits (5 & 15 April) but only one bill (#ZT-1141) exists.",
+  what:"Two payments of PKR 118,500.00 went to Zubair Traders within 10 days — but your purchase records show only one bill (#ZT-1141). One of these may be a duplicate.",
+  why:"If it truly was paid twice, that money can be recovered from the supplier — and your books currently show an expense that didn't happen.",
+  fix:"Tell us which it is: 'we paid twice by mistake' or 'here is the second bill' — attach the bill if you have it. Takes 2 minutes."},
+ {id:"E-102",sev:"crit",tico:"t-bad",tagTxt:"IMPORTANT",amt:"PKR 340,000",title:"You received PKR 340,000 that isn't in your books",
+  d:"Money arrived 12 April but no sale is recorded. FBR invoice #SI-2026-3387 matches the amount.",
+  what:"PKR 340,000.00 arrived in your bank on 2026-04-12, but your books have no entry for it. We found FBR sales invoice #SI-2026-3387 for exactly this amount, dated 11 April.",
+  why:"Sales missing from your books can create tax trouble later — this is exactly what gets expensive during an FBR notice.",
+  fix:"Confirm 'yes, this is that sale' — we'll prepare the book entry for your CA to approve. Takes 1 minute."}
+];
+function renderTasks(){
+  var el=$("taskList");el.innerHTML="";var open=0;
+  TASKS.forEach(function(x,i){
+    if(!x.done)open++;
+    var d=document.createElement("div");
+    d.className="task"+(x.done?" task-done":"");
+    d.innerHTML='<div class="tico '+(x.done?"t-ok":x.tico)+'">'+(x.done?"✓":"!")+'</div><div class="tbody"><div class="tt">'+x.title+'</div><div class="td">'+x.d+'</div><div class="tmeta"><span class="tag '+(x.done?"ok":x.sev)+'">'+(x.done?"ANSWERED":x.tagTxt)+'</span><span class="tag mut mono">'+x.id+'</span></div></div><div class="tamt mono">'+x.amt+'</div>'+(x.done?'<span class="tag ok">DONE</span>':'<span style="color:var(--faint);font-size:19px;align-self:center">›</span>');
+    d.onclick=function(){if(x.done){toast("Already answered ✓");return}openQ(i)};
+    el.appendChild(d);
+  });
+  $("taskCount").textContent=open;$("taskCount").style.display=open?"":"none";
+  if(open===0)$("taskEmpty").style.display="block";
+  $("nExc").textContent=open;
+  $("nExcS").textContent=open?"each takes ~2 minutes":"all answered ✓";
+  $("nMatch").textContent=open?"88%":"100%";
+  $("nMatchS").textContent=open?"7 of 8 checked":"8 of 8 — everything matches";
+  $("nCert").textContent=open?"Pending":"With CA";
+  $("nCertS").textContent=open?"signing waits on your answers":"all checks passed ✓";
+  $("tlResDot").textContent=open||"✓";
+  $("tlResSub").textContent=open?"Waiting on you":"Answered ✓";
+  var tl=$("tlRes");
+  if(open===0){tl.className="tl-it done";tl.querySelector(".tdot").textContent="✓";
+    setTimeout(function(){$("tlSign").className="tl-it done";$("tlSign").querySelector(".tdot").textContent="✓";
+      $("tlLive").className="tl-it cur";$("certPill").textContent="LIVE SOON";$("certPill").className="pill p-ok";
+      $("stamp").classList.add("show");},2400);
+  }else{tl.className="tl-it cur"}
+  updateVerdict(open);
+}
+function updateVerdict(open){
+  var v=$("verdict"),arc=$("vArc");
+  if(open===0){
+    v.className="verdict v-green rise";
+    arc.style.stroke="#188A54";
+    $("vBadge").textContent="✓";
+    $("vTitle").textContent="Your numbers are ready for signing";
+    $("vDesc").textContent="Everything matches and every question is answered. Your file has gone to your chartered accountant for the final signature — any bank will verify it in seconds.";
+    $("vNext").textContent="Nothing left for you — your CA takes it from here ✓";
+    arc.style.strokeDashoffset="24";
+  }else{
+    v.className="verdict v-amber rise";
+    arc.style.stroke="#B45309";
+    $("vBadge").textContent=open;
+    $("vTitle").textContent="Almost there — "+open+" thing"+(open>1?"s":"")+" need"+(open>1?"":"s")+" your attention";
+    $("vDesc").textContent="Your bank statement and your books have been checked — and they agree. "+open+" money question"+(open>1?"s are":" is")+" waiting for your answer. Once they're cleared, your chartered accountant can sign your certificate.";
+    $("vNext").textContent="Next step: answer the questions below — about 5 minutes →";
+    arc.style.strokeDashoffset="80";
+  }
+}
+var cur=0;
+function openQ(i){cur=i;var x=TASKS[i];
+  $("mTag").textContent=x.tagTxt;$("mTag").className="tag "+x.sev;
+  $("mTitle").textContent=x.title;$("mRef").textContent=x.id+" · April 2026 · Meridian Textiles (demo)";
+  $("mWhat").textContent=x.what;$("mWhy").textContent=x.why;$("mFix").textContent=x.fix;
+  $("qModal").classList.add("open");}
+function closeQ(){$("qModal").classList.remove("open")}
+function resolveCurrent(){var x=TASKS[cur],b=$("mBtn");b.disabled=true;b.textContent="Saving your answer…";
+  setTimeout(function(){x.done=true;b.disabled=false;b.textContent="I'll answer this now →";closeQ();renderTasks();
+    var open=TASKS.filter(function(t){return!t.done}).length;
+    toast(open?("✓ Answered — "+open+" left"):"✓ All answered — sent to your CA for signing")},1100);}
+document.querySelectorAll(".overlay").forEach(function(o){o.addEventListener("click",function(e){if(e.target===o)o.classList.remove("open")})});
+document.addEventListener("keydown",function(e){if(e.key==="Escape")closeQ()});
+function runEngine(){
+  var b=$("runBtn");if(b.disabled)return;b.disabled=true;b.textContent="Checking…";
+  $("pipe").style.display="block";
+  var steps=document.querySelectorAll(".pipe-steps .p-step");
+  steps.forEach(function(s){s.classList.remove("on","done")});
+  var i=0;
+  (function next(){
+    if(i>0)steps[i-1].classList.add("done");
+    if(i<steps.length){steps[i].classList.add("on");i++;setTimeout(next,620)}
+    else{var m=$("engMsg");var open=TASKS.filter(function(x){return!x.done}).length;
+      m.className="engmsg "+(open?"warn":"good");
+      m.textContent=open?"✓ Check complete — your numbers are healthy. "+open+" question"+(open>1?"s":"")+" waiting for you below.":"✓ Check complete — everything matches. Nothing for you to do.";
+      b.disabled=false;b.textContent="Check again ↺";}
+  })();
+}
+function doVerify(){
+  var id=($("vInput").value||"").trim().toUpperCase(),el=$("vResult");
+  el.innerHTML='<div class="vcard" style="text-align:center;color:var(--mut)">Checking the registry…</div>';
+  setTimeout(function(){
+    if(id==="ATTEST-PK-2026-406434-0A"){
+      el.innerHTML='<div class="vcard"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap"><div><div class="vstatus">● VALID & CURRENT</div><div class="vco">Meridian Textiles (Pvt) Ltd</div><div class="mono" style="font-size:12px;color:var(--faint);margin-top:2px">'+id+'</div></div><div style="width:74px;height:74px;position:relative;flex:none"><svg viewBox="0 0 76 76" style="position:absolute;inset:0;animation:spinSlow 18s linear infinite"><defs><path id="circ2" d="M38,38 m-32,0 a32,32 0 1,1 64,0 a32,32 0 1,1 -64,0"/></defs><text style="font-size:8.2px;font-weight:700;letter-spacing:1.6px;fill:var(--acc)"><textPath href="#circ2">CA SIGNED · VERIFIED · ATTEST · LIVE ·</textPath></text></svg><div style="position:absolute;inset:14px;border-radius:50%;background:var(--acc);display:grid;place-items:center"><svg width="20" height="20" viewBox="0 0 32 32"><path d="M11 16.5l4 4 9.5-11" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div></div>'+
+      '<div class="vrows"><div class="vrow"><span class="vk">Verification level</span><span class="vv">Level 2 — Books-to-bank reconciled</span></div><div class="vrow"><span class="vk">Reporting period</span><span class="vv">April 2026</span></div><div class="vrow"><span class="vk">Issuing firm</span><span class="vv">Attest Assurance (demo)</span></div><div class="vrow"><span class="vk">Authorized signatory</span><span class="vv">Kamran R. Sheikh, FCA</span></div><div class="vrow"><span class="vk">Evidence coverage</span><span class="vv">100% of transactions in scope</span></div><div class="vrow"><span class="vk">Issued</span><span class="vv">02 Jun 2026</span></div><div class="vrow"><span class="vk">Cryptographic integrity</span><span class="vv" style="color:var(--good)">✓ Signature verified</span></div></div>'+
+      '<div class="scopebox"><b>What this certificate establishes:</b> that the stated verification procedures were performed on the stated evidence sources, with the results reported. <b>What it does not establish:</b> this is limited assurance — not a statutory audit. It makes no representation of creditworthiness, solvency, profitability, absence of fraud, or future performance. Lending decisions remain the verifier\'s judgment.</div>'+
+      '<div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center"><button class="btn btn-o btn-sm" onclick="toast(\'Request sent — the company will approve what to share ✓\')">Request supporting evidence</button><span style="font-size:11.5px;color:var(--faint)">Checked '+new Date().toLocaleTimeString()+' · rate-limited public endpoint</span></div></div>';
+    }else{
+      el.innerHTML='<div class="vwarn-card"><div style="font-size:32px;margin-bottom:6px">🔍</div><h3 style="font-size:19px;font-weight:800">Certificate not found</h3><p style="color:var(--mut);font-size:14px;margin:8px auto 14px;max-width:420px">No certificate with this ID exists in the registry. Check the ID printed on the document — or if someone showed you this certificate, treat it as unverified.</p><button class="btn btn-o btn-sm" onclick="openVerify(\'ATTEST-PK-2026-406434-0A\')">Try the demo ID</button></div>';
+    }
+  },900);
+}
+var counted=false;
+function animateStats(){if(counted)return;counted=true;countTo($("nBal"),1636500,"PKR {v}");countTo($("nMatch"),88,"{v}%")}
+function countTo(el,to,fmt){if(!el)return;var t0=performance.now();
+  (function tick(t){var p=Math.min((t-t0)/1200,1),v=Math.round(to*(1-Math.pow(1-p,3)));
+    el.textContent=fmt.replace("{v}",v.toLocaleString("en-US"));if(p<1)requestAnimationFrame(tick)})(t0);}
+var lio=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.style.opacity=1;e.target.style.transform="none";lio.unobserve(e.target)}})},{threshold:.1});
+document.querySelectorAll(".step,.portal,.stat").forEach(function(el){el.style.opacity=0;el.style.transform="translateY(18px)";el.style.transition="opacity .7s var(--ease),transform .7s var(--ease)";lio.observe(el)});
+renderTasks();
+</script>
+</body>
+</html>

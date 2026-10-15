@@ -19,6 +19,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { StatusPill } from "@/components/ui/StatusPill";
+import { SealBadge } from "@/components/ui/SealBadge";
 import { formatEnumLabel } from "@/lib/labels";
 import { ATTEST_SCOPE_LANGUAGE, ATTEST_SIGNATURE_DISCLAIMER } from "@/lib/certificate";
 
@@ -446,39 +447,46 @@ export default function CASignOffChamber() {
 
       {/* If a certificate was issued or exists */}
       {latestCert && (
-        <div className="bg-white border border-emerald-200 rounded-2xl p-6 shadow-sm space-y-4">
-          <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-            <div className="flex items-center gap-2">
-              <Award className="w-5 h-5 text-emerald-600" />
-              <span className="font-bold text-sm text-[#0F172A]">Active Certificate Issued</span>
+        <div className="bg-white/92 backdrop-blur-md border border-[#CBE6D8] rounded-[20px] p-6 shadow-[0_1px_2px_rgba(23,22,26,.04),0_10px_30px_-14px_rgba(23,22,26,.12)] space-y-4 rise">
+          <div className="flex items-center justify-between border-b border-[#F1EFE9] pb-4">
+            <div className="flex items-center gap-3">
+              <SealBadge size={54} />
+              <div>
+                <span className="font-heading font-extrabold text-base text-[#17161A] block">
+                  Active Trust Certificate Issued
+                </span>
+                <span className="text-xs text-[#6E6A61]">
+                  Signed by licensed CA &bull; Publicly verifiable
+                </span>
+              </div>
             </div>
             <StatusPill rawValue={latestCert.status} type="status" />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
             <div>
-              <span className="text-[#64748B] block text-[10px] uppercase font-semibold">Public Identifier</span>
-              <span className="font-mono font-bold text-sm text-[#2563EB] mt-0.5 block">{latestCert.publicId}</span>
+              <span className="text-[#A8A296] block text-[10px] uppercase font-bold tracking-wider">Public Identifier</span>
+              <span className="font-mono font-bold text-sm text-[#4F46E5] mt-0.5 block">{latestCert.publicId}</span>
             </div>
             <div>
-              <span className="text-[#64748B] block text-[10px] uppercase font-semibold">Payload SHA-256 Hash</span>
-              <span className="font-mono text-xs text-[#0F172A] mt-0.5 block truncate">{latestCert.payloadHash}</span>
+              <span className="text-[#A8A296] block text-[10px] uppercase font-bold tracking-wider">Payload SHA-256 Hash</span>
+              <span className="font-mono text-xs text-[#17161A] mt-0.5 block truncate">{latestCert.payloadHash}</span>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-gray-100">
+          <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-[#F1EFE9]">
             <button
               onClick={copyPublicUrl}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E6E9EF] hover:bg-gray-50 text-xs font-semibold text-[#0F172A] transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E9E6DF] hover:bg-[#F1EFE9] text-xs font-semibold text-[#17161A] transition-colors"
             >
-              {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-[#64748B]" />}
+              {copied ? <Check className="w-3.5 h-3.5 text-[#188A54]" /> : <Copy className="w-3.5 h-3.5 text-[#6E6A61]" />}
               <span>{copied ? "Copied URL!" : "Copy Public URL"}</span>
             </button>
 
             <Link
               href={`/verify/${latestCert.publicId}`}
               target="_blank"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#2563EB] hover:bg-blue-700 text-white text-xs font-semibold transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#4F46E5] hover:bg-[#4338CA] text-white text-xs font-semibold transition-colors shadow-sm"
             >
               <span>Open in Public Verifier</span>
               <ExternalLink className="w-3.5 h-3.5" />
@@ -487,7 +495,7 @@ export default function CASignOffChamber() {
             {latestCert.status === "ISSUED" && (
               <button
                 onClick={() => setShowRevokeModal(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 text-xs font-semibold transition-colors ml-auto"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#F2CBC8] text-[#C0362C] hover:bg-[#FBECEA] text-xs font-semibold transition-colors ml-auto"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>Revoke Certificate</span>
@@ -499,35 +507,38 @@ export default function CASignOffChamber() {
 
       {/* DELIBERATE TWO-STEP CONFIRMATION MODAL */}
       {showConfirmModal && gatesData && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8 space-y-6 shadow-2xl">
-            <div className="border-b border-[#E6E9EF] pb-4">
-              <span className="text-[10px] font-mono font-bold uppercase text-[#2563EB] tracking-wider block">
-                Final Attestation Step 2 of 2
-              </span>
-              <h2 className="text-xl font-bold text-[#0F172A] mt-1">
-                Confirm &amp; Issue Continuous Assurance Certificate
-              </h2>
+        <div className="fixed inset-0 z-50 bg-[#17161A]/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-[22px] max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8 space-y-6 shadow-2xl rise">
+            <div className="border-b border-[#E9E6DF] pb-4 flex items-center justify-between gap-4">
+              <div>
+                <span className="text-[10px] font-mono font-bold uppercase text-[#4F46E5] tracking-wider block">
+                  Final Attestation Step 2 of 2
+                </span>
+                <h2 className="font-heading text-xl font-bold text-[#17161A] mt-1">
+                  Confirm &amp; Issue Continuous Assurance Certificate
+                </h2>
+              </div>
+              <SealBadge size={62} />
             </div>
 
             {/* Scope & Details Summary */}
             <div className="space-y-4 text-xs">
-              <div className="grid grid-cols-2 gap-3 p-4 bg-[#F7F8FA] rounded-xl border border-[#E6E9EF]">
+              <div className="grid grid-cols-2 gap-3 p-4 bg-[#FAF9F6] rounded-xl border border-[#E9E6DF]">
                 <div>
-                  <span className="text-[#64748B] block text-[10px] uppercase font-semibold">Organization</span>
-                  <span className="font-bold text-[#0F172A] mt-0.5 block">Meridian Textiles (Pvt) Ltd</span>
+                  <span className="text-[#6E6A61] block text-[10px] uppercase font-semibold">Organization</span>
+                  <span className="font-bold text-[#17161A] mt-0.5 block">Meridian Textiles (Pvt) Ltd</span>
                 </div>
                 <div>
-                  <span className="text-[#64748B] block text-[10px] uppercase font-semibold">Period</span>
-                  <span className="font-mono font-bold text-[#0F172A] mt-0.5 block">{period}</span>
+                  <span className="text-[#6E6A61] block text-[10px] uppercase font-semibold">Period</span>
+                  <span className="font-mono font-bold text-[#17161A] mt-0.5 block">{period}</span>
                 </div>
                 <div>
-                  <span className="text-[#64748B] block text-[10px] uppercase font-semibold">Assurance Level</span>
-                  <span className="font-bold text-[#2563EB] mt-0.5 block">{gatesData.levelTitle}</span>
+                  <span className="text-[#6E6A61] block text-[10px] uppercase font-semibold">Assurance Level</span>
+                  <span className="font-bold text-[#4F46E5] mt-0.5 block">{gatesData.levelTitle}</span>
                 </div>
                 <div>
-                  <span className="text-[#64748B] block text-[10px] uppercase font-semibold">Reconciled Coverage</span>
-                  <span className="font-bold text-emerald-700 mt-0.5 block">{gatesData.coveragePercent}%</span>
+                  <span className="text-[#6E6A61] block text-[10px] uppercase font-semibold">Reconciled Coverage</span>
+                  <span className="font-bold text-[#188A54] mt-0.5 block">{gatesData.coveragePercent}%</span>
                 </div>
               </div>
 

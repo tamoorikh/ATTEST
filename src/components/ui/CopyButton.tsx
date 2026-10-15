@@ -35,10 +35,10 @@ export function CopyButton({
       onClick={handleCopy}
       title={copied ? "Copied to clipboard!" : label}
       aria-label={label}
-      className={`inline-flex items-center gap-1 p-1 rounded hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-700 ${className}`}
+      className={`inline-flex items-center gap-1 p-1 rounded-md hover:bg-[#F1EFE9] transition-colors text-[#A8A296] hover:text-[#17161A] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#4F46E5] ${className}`}
     >
       {copied ? (
-        <Check className="w-3.5 h-3.5 text-emerald-600" />
+        <Check className="w-3.5 h-3.5 text-[#188A54]" />
       ) : (
         <Copy className="w-3.5 h-3.5" />
       )}

@@ -56,12 +56,12 @@ export function EvidenceRequestForm({ certificatePublicId, period }: EvidenceReq
 
   if (success) {
     return (
-      <div className="border border-emerald-200 rounded-2xl p-6 bg-emerald-50/50 text-xs text-emerald-950 space-y-2">
-        <div className="flex items-center gap-2 font-bold text-sm text-emerald-800">
-          <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+      <div className="border border-[#188A54]/30 rounded-2xl p-6 bg-[#188A54]/10 text-xs text-[#17161A] space-y-2">
+        <div className="flex items-center gap-2 font-bold text-sm text-[#188A54]">
+          <CheckCircle2 className="w-5 h-5 text-[#188A54]" />
           <span>Evidence Pack Request Submitted</span>
         </div>
-        <p className="leading-relaxed">
+        <p className="leading-relaxed text-[#6E6A63]">
           Your request for supporting evidence has been transmitted to the authorized client owner for review. If approved, a cryptographically signed, 7-day expiring download package will be delivered to <strong>{email}</strong>.
         </p>
       </div>
@@ -70,13 +70,13 @@ export function EvidenceRequestForm({ certificatePublicId, period }: EvidenceReq
 
   if (!open) {
     return (
-      <div className="border border-[#E6E9EF] rounded-2xl p-6 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+      <div className="border border-[#E9E6DF] rounded-2xl p-6 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
         <div>
-          <h3 className="text-sm font-bold text-[#0F172A] flex items-center gap-2">
-            <FileLock2 className="w-4 h-4 text-[#2563EB]" />
+          <h3 className="text-sm font-bold text-[#17161A] flex items-center gap-2">
+            <FileLock2 className="w-4 h-4 text-[#4F46E5]" />
             Request Supporting Evidence Package
           </h3>
-          <p className="text-xs text-[#64748B] mt-1">
+          <p className="text-xs text-[#6E6A63] mt-1">
             Commercial lenders and verified counterparties may request read-only access to underlying supporting documents.
           </p>
         </div>
@@ -84,7 +84,7 @@ export function EvidenceRequestForm({ certificatePublicId, period }: EvidenceReq
           type="button"
           onClick={() => setOpen(true)}
           id="btnOpenEvidenceRequest"
-          className="px-4 py-2.5 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white text-xs font-semibold whitespace-nowrap transition-colors shadow-sm shrink-0"
+          className="px-4 py-2.5 rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] text-white text-xs font-semibold whitespace-nowrap transition-colors shadow-sm shrink-0"
         >
           Request Supporting Evidence
         </button>
@@ -93,21 +93,21 @@ export function EvidenceRequestForm({ certificatePublicId, period }: EvidenceReq
   }
 
   return (
-    <div className="border border-[#E6E9EF] rounded-2xl p-6 bg-white shadow-sm space-y-4 text-xs">
-      <div className="flex items-center justify-between border-b border-[#E6E9EF] pb-3">
+    <div className="border border-[#E9E6DF] rounded-2xl p-6 bg-white shadow-sm space-y-4 text-xs">
+      <div className="flex items-center justify-between border-b border-[#E9E6DF] pb-3">
         <div>
-          <h3 className="text-sm font-bold text-[#0F172A] flex items-center gap-2">
-            <FileLock2 className="w-4 h-4 text-[#2563EB]" />
+          <h3 className="text-sm font-bold text-[#17161A] flex items-center gap-2">
+            <FileLock2 className="w-4 h-4 text-[#4F46E5]" />
             Request Supporting Evidence (Consent Charter)
           </h3>
-          <p className="text-xs text-[#64748B] mt-0.5">
+          <p className="text-xs text-[#6E6A63] mt-0.5">
             Subject to client explicit consent. All access is logged and audited.
           </p>
         </div>
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="text-xs text-[#64748B] hover:text-[#0F172A]"
+          className="text-xs text-[#6E6A63] hover:text-[#17161A]"
         >
           Cancel
         </button>
@@ -123,7 +123,7 @@ export function EvidenceRequestForm({ certificatePublicId, period }: EvidenceReq
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="font-semibold text-[#0F172A] block mb-1">Your Full Name *</label>
+            <label className="font-semibold text-[#17161A] block mb-1">Your Full Name *</label>
             <input
               type="text"
               id="txtRequesterName"
@@ -131,24 +131,24 @@ export function EvidenceRequestForm({ certificatePublicId, period }: EvidenceReq
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Tariq Khan"
-              className="w-full text-xs p-2.5 rounded-xl border border-[#E6E9EF] focus:outline-none focus:ring-1 focus:ring-[#2563EB]"
+              className="w-full text-xs p-2.5 rounded-xl border border-[#E9E6DF] focus:outline-none focus:ring-1 focus:ring-[#4F46E5] text-[#17161A]"
             />
           </div>
           <div>
-            <label className="font-semibold text-[#0F172A] block mb-1">Your Organization / Firm</label>
+            <label className="font-semibold text-[#17161A] block mb-1">Your Organization / Firm</label>
             <input
               type="text"
               id="txtRequesterOrg"
               value={org}
               onChange={(e) => setOrg(e.target.value)}
               placeholder="e.g. Habib Bank Limited / Commercial Credit"
-              className="w-full text-xs p-2.5 rounded-xl border border-[#E6E9EF] focus:outline-none focus:ring-1 focus:ring-[#2563EB]"
+              className="w-full text-xs p-2.5 rounded-xl border border-[#E9E6DF] focus:outline-none focus:ring-1 focus:ring-[#4F46E5] text-[#17161A]"
             />
           </div>
         </div>
 
         <div>
-          <label className="font-semibold text-[#0F172A] block mb-1">Work Email Address *</label>
+          <label className="font-semibold text-[#17161A] block mb-1">Work Email Address *</label>
           <input
             type="email"
             id="txtRequesterEmail"
@@ -156,12 +156,12 @@ export function EvidenceRequestForm({ certificatePublicId, period }: EvidenceReq
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="name@organization.com"
-            className="w-full text-xs p-2.5 rounded-xl border border-[#E6E9EF] focus:outline-none focus:ring-1 focus:ring-[#2563EB]"
+            className="w-full text-xs p-2.5 rounded-xl border border-[#E9E6DF] focus:outline-none focus:ring-1 focus:ring-[#4F46E5] text-[#17161A]"
           />
         </div>
 
         <div>
-          <label className="font-semibold text-[#0F172A] block mb-1">Commercial Purpose of Request *</label>
+          <label className="font-semibold text-[#17161A] block mb-1">Commercial Purpose of Request *</label>
           <textarea
             rows={2}
             id="txtRequesterPurpose"
@@ -169,12 +169,12 @@ export function EvidenceRequestForm({ certificatePublicId, period }: EvidenceReq
             value={purpose}
             onChange={(e) => setPurpose(e.target.value)}
             placeholder="Explain why you need supporting documentation (e.g. credit facility underwriting, supply chain onboarding)..."
-            className="w-full text-xs p-2.5 rounded-xl border border-[#E6E9EF] focus:outline-none focus:ring-1 focus:ring-[#2563EB]"
+            className="w-full text-xs p-2.5 rounded-xl border border-[#E9E6DF] focus:outline-none focus:ring-1 focus:ring-[#4F46E5] text-[#17161A]"
           />
         </div>
 
         <div>
-          <label className="font-semibold text-[#0F172A] block mb-1.5">Requested Evidence Categories:</label>
+          <label className="font-semibold text-[#17161A] block mb-1.5">Requested Evidence Categories:</label>
           <div className="flex flex-wrap gap-4">
             {[
               { id: "BANK_STATEMENT", label: "Bank Statements" },
@@ -189,9 +189,9 @@ export function EvidenceRequestForm({ certificatePublicId, period }: EvidenceReq
                     if (e.target.checked) setCategories([...categories, cat.id]);
                     else setCategories(categories.filter((c) => c !== cat.id));
                   }}
-                  className="rounded text-[#2563EB] focus:ring-[#2563EB]"
+                  className="rounded text-[#4F46E5] focus:ring-[#4F46E5]"
                 />
-                <span>{cat.label}</span>
+                <span className="text-[#17161A]">{cat.label}</span>
               </label>
             ))}
           </div>
@@ -201,7 +201,7 @@ export function EvidenceRequestForm({ certificatePublicId, period }: EvidenceReq
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="px-4 py-2 rounded-xl border border-[#E6E9EF] text-xs font-semibold text-[#64748B] hover:bg-gray-50"
+            className="px-4 py-2 rounded-xl border border-[#E9E6DF] text-xs font-semibold text-[#6E6A63] hover:bg-[#FAF9F6]"
           >
             Cancel
           </button>
@@ -209,7 +209,7 @@ export function EvidenceRequestForm({ certificatePublicId, period }: EvidenceReq
             type="submit"
             id="btnSubmitEvidenceRequest"
             disabled={submitting}
-            className="px-5 py-2 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-sm flex items-center gap-1.5 disabled:opacity-40"
+            className="px-5 py-2 rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] text-white text-xs font-semibold transition-colors shadow-sm flex items-center gap-1.5 disabled:opacity-40"
           >
             <Send className="w-3.5 h-3.5" />
             <span>{submitting ? "Submitting..." : "Submit Disclosure Request"}</span>

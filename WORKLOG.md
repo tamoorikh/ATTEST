@@ -808,6 +808,87 @@ Phase 4 introduces the network moment of Attest: a cryptographically signed trus
 - **Build Output**: 34 pages optimized, zero bundle warnings
 - **Secret Audit**: 0 secrets leaked in client bundles
 
+---
+
+## Phase: P5.5: Design System Overhaul
+**Date**: October 15, 2026  
+**Status**: COMPLETE ✅  
+**Commit Message**: `P5.5: design system`
+
+### 1. Overview & Scope Lock
+- Ported the visual design language from `design-reference.html` across the entire Next.js application.
+- **Frontend-only restyle**: All routes, API endpoints, permissions checks, deterministic engine logic, and data flows remain completely untouched.
+- `git diff src/engine`, `git diff src/app/api`, and `git diff prisma` strictly return 0 lines changed.
+
+### 2. Design System Tokens & Foundation
+1. **Design Tokens (`globals.css` & `tailwind.config.ts`)**:
+   - Palette: Background `--bg #FAF9F6`, card `--card #FFFFFF`, borders `--line #E9E6DF`, line-highlight `--line2 #DDD9D0`, primary text `--txt #17161A`, muted text `--mut #6E6A63`, faint text `--faint #9E9B94`.
+   - Brand Accents: Accent `--acc #4F46E5`, secondary accent `--acc2 #7C5CFF`.
+   - Semantic Colors: Success green `--good #188A54`, warning amber `--warn #B45309`, alert red `--bad #C0362C`.
+   - Decorative Washes: Spray pink `#EC4899` and spray teal `#14B8A6` strictly reserved for background decorative art layer.
+   - Card Style: `rgba(255, 255, 255, 0.92)` with `backdrop-blur-md` (`card-glass`), allowing the whisper art layer to hint through while maintaining crisp readability.
+   - Shadows: `--sh: 0 1px 2px rgba(23,22,26,.04), 0 10px 30px -14px rgba(23,22,26,.12)`; `--sh2: 0 20px 40px -15px rgba(23,22,26,.18)`.
+2. **Typography**:
+   - Headings: `Inter Tight` (variable font).
+   - Body & Controls: `Inter` (variable font).
+   - Identifiers, Amounts & Hashes: `JetBrains Mono` (variable font).
+3. **The Whisper Decorative Layer (`<GraffitiBackdrop />`)**:
+   - 4 blurred drifting spray washes (`.wash`) with 22-30s slow non-linear float.
+   - 3 giant ghost outline words (`.ghostword`): `"TRUST"` (left), `"✓ 100%"` (center), `"VERIFIED"` (bottom right) with stroke-only text at ~6% opacity.
+   - 6 hand-drawn SVG doodle assets (`.doodle`): arrow curl, verified badge, squiggle, burst star, crown doodle, double underline at 15–28% opacity.
+   - Fully accessible: `pointer-events-none`, `aria-hidden="true"`, `z-0` behind content. Responsive: ghost words and doodles hidden below 900px viewports (washes stay).
+   - Selective rendering rule: Present on all application pages EXCEPT the public `/verify/[id]` result sheet and the certificate print view (`/portal/certificate/print`), where a clean institutional background is maintained.
+4. **Accessibility & Reduced Motion**:
+   - `@media (prefers-reduced-motion: reduce)` disables all spray drift, word reveal, circular spin, and pulse animations.
+   - Explicit visible focus rings (`focus-visible:ring-2 focus-visible:ring-[#4F46E5]`) on all interactive buttons, inputs, and links.
+   - Contrast ratio &ge; 4.5:1 for all text against the warm background.
+   - Zero emojis in the UI — 100% inline SVGs via Lucide React and custom SVG paths.
+
+### 3. Reusable Component Suite (`src/components/ui`)
+- `<GraffitiBackdrop />`: Global subtle background art layer.
+- `<VerdictCard />`: Animated SVG ring with `stroke-dashoffset` transition, dynamic state badge, plain-language title/description/CTA (amber open count &rarr; green CA handover).
+- `<SummaryStrip />`: 4-stat continuous assurance summary strip with count-up animation on mount and hairline vertical dividers.
+- `<ExceptionRow />`: Severity chip, plain-language title, tags, mono amount, chevron, interactive click handler.
+- `<PipelineSteps />`: 6-stage checking machine progress pills with active pulsing dot and completed checkmarks.
+- `<TimelineSteps />`: Vertical timeline showing arithmetic continuity, question resolution, and CA verification, with `"CA VERIFIED ✓"` stamp (`stampIn` animation).
+- `<SealBadge />`: Rotating SVG circular text seal with `"CA SIGNED · VERIFIED · ATTEST · LIVE ·"` path and central shield emblem.
+- `<StatusPill />` & `<Tag />`: Palette-aligned semantic pills with clean borders.
+- `<CopyButton />` & `<Toast />`: Restyled with design tokens and smooth transitions.
+
+### 4. Page Restyles
+- **Landing (`/`)**: Word-by-word reveal hero, 3D tilting certificate card with `SealBadge` and live daily clock, marquee ticker band, 3-step continuous flow, 3 persona portals, CTA band, honest footer with disclaimer.
+- **Authentication (`/auth/signin`, `/auth/register`)**: Centered frosted cards with `GraffitiBackdrop`, demo persona quick-logins strictly gated behind `NEXT_PUBLIC_DEMO_MODE`.
+- **Portal Dashboard (`/portal`)**: Wired to real exceptions, `VerdictCard`, `SummaryStrip`, `ExceptionRow` with owner-friendly translations from `labels.ts`, checking machine card with `PipelineSteps`, and interactive Question Modal.
+- **CA Console (`/ca`)**: Ranked review queue styled with `ExceptionRow` chips and glass cards.
+- **CA Sign-Off Chamber (`/ca/sign-off`)**: Sign-off card featuring `SealBadge` on issued certificates and pre-sign checklist.
+- **Certificate View (`/portal/certificate`)**: Frosted card layout with `SealBadge` and download actions.
+- **Certificate Print View (`/portal/certificate/print`)**: Pure white institutional document layout without art layer.
+- **Public Verifier Search (`/verify`)**: Restyled search hero with `GraffitiBackdrop` and privacy shield callout.
+- **Public Verifier Result (`/verify/[id]`)**: Clean institutional card without graffiti backdrop, featuring `SealBadge` on valid certificates, verbatim `ATTEST_SCOPE_LANGUAGE`, friendly not-found card, and evidence disclosure request form.
+
+### 5. Verification Results
+- **Automated Tests**: All 9 test suites passed, 67/67 tests green (`npm test`).
+- **Production Build**: Clean compilation with 0 errors/warnings (`npm run build`).
+- **Walkthrough Screenshots**: 12 high-resolution screenshots generated in Edge and saved to artifacts:
+  1. `01_landing.png`: Landing hero with tilting cert card, rotating seal, and marquee.
+  2. `02_signin.png`: Frosted sign-in card with demo persona buttons.
+  3. `03_dashboard_amber.png`: Client dashboard with amber VerdictCard ring and open questions.
+  4. `04_exception_detail.png`: Question modal with owner-friendly explanation and document picker.
+  5. `05_engine_run_mid.png`: Checking machine mid-run with animated PipelineSteps pills.
+  6. `06_certificate_view.png`: Client certificate view with rotating SealBadge.
+  7. `07_ca_console.png`: CA review console with ranked exception rows.
+  8. `08_ca_sign_off.png`: CA sign-off chamber with issued trust certificate.
+  9. `09_verify_valid.png`: Public verifier with valid certificate, SealBadge, and scope language.
+  10. `10_verify_not_found.png`: Public verifier friendly not-found card with search guidance.
+  11. `11_dashboard_green.png`: Client dashboard with green VerdictCard ring.
+  12. `12_side_by_side_comparison.png`: Visual sibling proof juxtaposing `design-reference.html` against `/portal`.
+
+### 6. Phase 6 Candidates (Future Engine / Backend Considerations)
+- **Audit Event Cursor Pagination**: For organizations exceeding 10,000 ledger entries, add cursor-based keyset pagination to `src/engine/audit.ts`.
+- **Automated CA Webhook Dispatch**: Optional webhook notifications dispatched upon CA certificate digital signing.
+- **Hardware Security Module (HSM) PKI Bridge**: Production PKI qualified digital signature signing pipeline for physical token or Cloud KMS integration.
+
+
 
 
 

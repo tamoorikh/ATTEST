@@ -311,8 +311,9 @@ export function WorkpaperClient({
                   </div>
                 </div>
               ) : (
-                <div className="text-rose-600 font-medium py-3 text-center bg-rose-50/50 rounded-lg border border-rose-100">
-                  ⚠️ Unrecorded in books
+                <div className="text-rose-600 font-medium py-3 text-center bg-rose-50/50 rounded-lg border border-rose-100 flex items-center justify-center gap-1.5">
+                  <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+                  Unrecorded in books
                 </div>
               )}
             </div>

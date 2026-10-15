@@ -4,15 +4,7 @@ import React, { useState, Suspense } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import {
-  ShieldCheck,
-  ArrowRight,
-  AlertCircle,
-  Building2,
-  UserCheck,
-  CheckCircle2,
-  Lock,
-} from "lucide-react";
+import { GraffitiBackdrop } from "@/components/ui/GraffitiBackdrop";
 
 function SignInForm() {
   const router = useRouter();
@@ -20,8 +12,10 @@ function SignInForm() {
   const callbackUrl = searchParams.get("callbackUrl") || "/portal";
   const authError = searchParams.get("error");
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [tab, setTab] = useState<"login" | "signup">("login");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("demo@attest.pk");
+  const [password, setPassword] = useState("Demo1234!");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(
     authError ? "Authentication failed. Please verify credentials." : ""
@@ -31,6 +25,11 @@ function SignInForm() {
     e.preventDefault();
     setLoading(true);
     setError("");
+
+    if (tab === "signup") {
+      router.push("/auth/register");
+      return;
+    }
 
     try {
       const res = await signIn("credentials", {
@@ -50,7 +49,7 @@ function SignInForm() {
         }
         router.refresh();
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError("An unexpected error occurred. Please try again.");
       setLoading(false);
     }
@@ -64,161 +63,163 @@ function SignInForm() {
   const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 
   return (
-    <div className="min-h-screen bg-[#F7F8FA] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        {/* Logo Mark */}
-        <div className="flex justify-center items-center gap-2.5 mb-3">
-          <div className="w-11 h-11 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-[#2563EB] shadow-sm">
-            <ShieldCheck className="w-6 h-6" />
-          </div>
-          <span className="text-2xl font-extrabold tracking-tight text-[#0F172A]">
-            Attest
-          </span>
-        </div>
-        <h1 className="text-center text-xl font-bold tracking-tight text-[#0F172A]">
-          Sign in to your assurance workspace
-        </h1>
-        <p className="mt-1 text-center text-xs text-[#64748B]">
-          Continuous financial verification for clients and licensed auditors
-        </p>
-      </div>
+    <div className="relative min-h-screen bg-[#FAF9F6] text-[#17161A] flex items-center justify-center p-5 overflow-hidden">
+      {/* Whisper decorative art backdrop */}
+      <GraffitiBackdrop />
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        {/* Quick Demo Personas Box — Gated behind DEMO_MODE */}
+      {/* Centered Auth Card */}
+      <div className="relative z-10 w-full max-w-[430px] bg-white/94 backdrop-blur-md border border-[#E9E6DF] rounded-[22px] p-8 sm:p-9 shadow-[0_24px_60px_-26px_rgba(23,22,26,.25)] rise">
+        {/* Logo */}
+        <div className="flex justify-center mb-3.5">
+          <Link href="/" className="flex items-center gap-2.5 font-extrabold text-[19px] tracking-tight">
+            <span className="w-8 h-8 rounded-[10px] bg-[#4F46E5] grid place-items-center text-white shrink-0 shadow-sm">
+              <svg width="16" height="16" viewBox="0 0 32 32">
+                <path d="M11 16.5l4 4 9.5-11" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
+            <span>Attest</span>
+          </Link>
+        </div>
+
+        <h1 className="font-heading text-[23px] font-extrabold text-center tracking-tight text-[#17161A]">
+          {tab === "signup" ? "Create your workspace" : "Welcome back"}
+        </h1>
+        <p className="text-center text-[#6E6A61] text-[13.5px] mt-1 mb-5">
+          {tab === "signup"
+            ? "Free during the pilot — your first certificate in 48 hours"
+            : "Sign in to your assurance workspace"}
+        </p>
+
+        {/* Tabs */}
+        <div className="grid grid-cols-2 bg-[#F1EFE9] rounded-xl p-1 mb-5">
+          <button
+            type="button"
+            onClick={() => setTab("login")}
+            className={`py-2 rounded-[9px] font-semibold text-[13.5px] transition-all ${
+              tab === "login"
+                ? "bg-white text-[#17161A] shadow-[0_1px_4px_rgba(23,22,26,.1)]"
+                : "text-[#6E6A61] hover:text-[#17161A]"
+            }`}
+          >
+            Sign in
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab("signup")}
+            className={`py-2 rounded-[9px] font-semibold text-[13.5px] transition-all ${
+              tab === "signup"
+                ? "bg-white text-[#17161A] shadow-[0_1px_4px_rgba(23,22,26,.1)]"
+                : "text-[#6E6A61] hover:text-[#17161A]"
+            }`}
+          >
+            Sign up
+          </button>
+        </div>
+
+        {error && (
+          <div className="mb-4 bg-[#FBECEA] border border-[#F2CBC8] text-[#C0362C] rounded-xl p-3 text-xs font-semibold">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-3.5">
+          {tab === "signup" && (
+            <div>
+              <label className="block text-[12.5px] font-semibold text-[#57534E] mb-1.5">
+                Full name
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Tariq Mahmood"
+                className="w-full px-3.5 py-2.5 rounded-[11px] border border-[#E9E6DF] bg-white text-[#17161A] text-sm focus:outline-none focus:border-[#4F46E5] focus:ring-4 focus:ring-[#4F46E5]/10 transition-all font-sans"
+              />
+            </div>
+          )}
+
+          <div>
+            <label className="block text-[12.5px] font-semibold text-[#57534E] mb-1.5">
+              Email
+            </label>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="demo@attest.pk"
+              className="w-full px-3.5 py-2.5 rounded-[11px] border border-[#E9E6DF] bg-white text-[#17161A] text-sm focus:outline-none focus:border-[#4F46E5] focus:ring-4 focus:ring-[#4F46E5]/10 transition-all font-mono"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[12.5px] font-semibold text-[#57534E] mb-1.5">
+              Password
+            </label>
+            <input
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              className="w-full px-3.5 py-2.5 rounded-[11px] border border-[#E9E6DF] bg-white text-[#17161A] text-sm focus:outline-none focus:border-[#4F46E5] focus:ring-4 focus:ring-[#4F46E5]/10 transition-all font-mono"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full mt-4 flex items-center justify-center gap-2 font-semibold text-[14.5px] py-3 px-4 rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] text-white shadow-[0_8px_20px_-10px_rgba(79,70,229,.6)] transition-all disabled:opacity-50 hover:-translate-y-0.5 cursor-pointer"
+          >
+            {loading ? "Authenticating…" : tab === "signup" ? "Create account →" : "Sign in →"}
+          </button>
+        </form>
+
+        {/* Demo Personas — strictly gated behind DEMO_MODE */}
         {isDemoMode && (
-          <div className="mb-6 bg-white border border-[#E6E9EF] rounded-xl p-4 shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[11px] font-bold text-[#0F172A] uppercase tracking-wider flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5 text-[#2563EB]" />
-                Demo Persona Quick-Login
-              </span>
-              <span className="text-[10px] text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full font-mono font-semibold border border-blue-200">
-                Auto-fill
-              </span>
+          <>
+            <div className="flex items-center gap-3 my-5 text-[#A8A296] text-[11.5px] font-semibold">
+              <span className="flex-1 h-px bg-[#E9E6DF]" />
+              <span>or try a demo</span>
+              <span className="flex-1 h-px bg-[#E9E6DF]" />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-2 gap-2.5">
               <button
                 type="button"
                 onClick={() => handleQuickLogin("demo@attest.pk", "Demo1234!")}
-                className={`p-3 rounded-xl border text-left transition-all text-xs flex flex-col justify-between ${
-                  email === "demo@attest.pk"
-                    ? "border-[#2563EB] bg-blue-50/60 ring-2 ring-[#2563EB]/20"
-                    : "border-[#E6E9EF] hover:border-gray-300 hover:bg-[#F7F8FA]"
-                }`}
+                className="bg-white border border-[#E9E6DF] rounded-[14px] p-3.5 text-center hover:border-[#4F46E5] transition-all hover:-translate-y-0.5 cursor-pointer group"
               >
-                <div>
-                  <div className="flex items-center gap-1.5 font-bold text-[#0F172A]">
-                    <Building2 className="w-4 h-4 text-[#2563EB]" />
-                    Client Owner
-                  </div>
-                  <p className="text-[11px] text-[#64748B] mt-1 leading-snug">
-                    Upload statements &amp; manage exceptions
-                  </p>
+                <div className="w-[34px] h-[34px] rounded-[10px] bg-[#EEEDFB] text-[#4F46E5] grid place-items-center mx-auto mb-1.5 transition-colors">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6" />
+                  </svg>
                 </div>
-                <div className="font-mono text-[10px] text-[#2563EB] font-medium mt-2 pt-2 border-t border-gray-100">
-                  demo@attest.pk
-                </div>
+                <div className="font-bold text-[13px] text-[#17161A]">Business Owner</div>
+                <div className="text-[11px] text-[#6E6A61] mt-0.5">Meridian Textiles</div>
               </button>
 
               <button
                 type="button"
                 onClick={() => handleQuickLogin("ca@attest.pk", "Demo1234!")}
-                className={`p-3 rounded-xl border text-left transition-all text-xs flex flex-col justify-between ${
-                  email === "ca@attest.pk"
-                    ? "border-[#2563EB] bg-blue-50/60 ring-2 ring-[#2563EB]/20"
-                    : "border-[#E6E9EF] hover:border-gray-300 hover:bg-[#F7F8FA]"
-                }`}
+                className="bg-white border border-[#E9E6DF] rounded-[14px] p-3.5 text-center hover:border-[#4F46E5] transition-all hover:-translate-y-0.5 cursor-pointer group"
               >
-                <div>
-                  <div className="flex items-center gap-1.5 font-bold text-[#0F172A]">
-                    <UserCheck className="w-4 h-4 text-[#2563EB]" />
-                    Chartered Acct
-                  </div>
-                  <p className="text-[11px] text-[#64748B] mt-1 leading-snug">
-                    Review evidence &amp; sign certificates
-                  </p>
+                <div className="w-[34px] h-[34px] rounded-[10px] bg-[#EEEDFB] text-[#4F46E5] grid place-items-center mx-auto mb-1.5 transition-colors">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="2" y="7" width="20" height="14" rx="2" />
+                    <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+                  </svg>
                 </div>
-                <div className="font-mono text-[10px] text-[#2563EB] font-medium mt-2 pt-2 border-t border-gray-100">
-                  ca@attest.pk
-                </div>
+                <div className="font-bold text-[13px] text-[#17161A]">CA Reviewer</div>
+                <div className="text-[11px] text-[#6E6A61] mt-0.5">Licensed professional</div>
               </button>
             </div>
-          </div>
+          </>
         )}
 
-        {/* Centered Sign-In Card */}
-        <div className="bg-white py-7 px-6 border border-[#E6E9EF] rounded-xl shadow-sm sm:px-8">
-          {error && (
-            <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 flex items-start gap-2 text-xs text-red-800">
-              <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 shrink-0" />
-              <span>{error}</span>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-[#0F172A]">
-                Email Address
-              </label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@company.com"
-                className="mt-1 block w-full px-3.5 py-2.5 border border-[#E6E9EF] rounded-lg text-sm bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent font-mono text-[#0F172A]"
-              />
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between">
-                <label className="block text-xs font-semibold text-[#0F172A]">
-                  Password
-                </label>
-              </div>
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="mt-1 block w-full px-3.5 py-2.5 border border-[#E6E9EF] rounded-lg text-sm bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent font-mono text-[#0F172A]"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full flex justify-center items-center gap-2 py-2.5 px-4 rounded-xl shadow-sm text-sm font-semibold text-white bg-[#2563EB] hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2563EB] disabled:opacity-50 transition-colors"
-            >
-              {loading ? "Authenticating..." : "Sign In to Workspace"}
-              {!loading && <ArrowRight className="w-4 h-4" />}
-            </button>
-          </form>
-
-          <div className="mt-6 pt-5 border-t border-[#E6E9EF] text-center">
-            <p className="text-xs text-[#64748B]">
-              New organization?{" "}
-              <Link
-                href="/auth/register"
-                className="font-semibold text-[#2563EB] hover:underline"
-              >
-                Create business account
-              </Link>
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-6 text-center">
-          <Link
-            href="/verify"
-            className="text-xs text-[#64748B] hover:text-[#0F172A] font-medium inline-flex items-center gap-1"
-          >
-            <span>Verifying a public certificate?</span>{" "}
-            <span className="text-[#2563EB] underline font-semibold">
-              Go to Public Verifier &rarr;
-            </span>
+        <div className="text-center mt-5 text-[13px] text-[#6E6A61]">
+          <Link href="/" className="text-[#A8A296] hover:text-[#17161A] transition-colors">
+            &larr; Back to site
           </Link>
         </div>
       </div>
@@ -230,8 +231,8 @@ export default function SignInPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#F7F8FA] flex items-center justify-center text-xs text-[#64748B]">
-          Loading sign in...
+        <div className="min-h-screen bg-[#FAF9F6] flex items-center justify-center text-xs text-[#6E6A61]">
+          Loading workspace...
         </div>
       }
     >

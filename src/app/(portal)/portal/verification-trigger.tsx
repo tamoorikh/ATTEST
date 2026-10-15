@@ -2,25 +2,9 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Play,
-  Loader2,
-  CheckCircle2,
-  AlertTriangle,
-  ArrowRight,
-  Sparkles,
-  Layers,
-} from "lucide-react";
+import { ArrowRight, AlertTriangle } from "lucide-react";
+import { PipelineSteps } from "@/components/ui/PipelineSteps";
 import { StatusPill } from "@/components/ui/StatusPill";
-
-const PIPELINE_STEPS = [
-  { id: 1, name: "Normalize", desc: "Integer paisa arithmetic" },
-  { id: 2, name: "Validate", desc: "R1–R4 continuity rules" },
-  { id: 3, name: "Classify", desc: "Deterministic category heuristics" },
-  { id: 4, name: "Match", desc: "1:1, 1:many, and partial reconciliation" },
-  { id: 5, name: "Three-Way", desc: "Bank ↔ Ledger ↔ Invoices trace" },
-  { id: 6, name: "Exceptions", desc: "Explainable variance generation" },
-];
 
 export function VerificationTrigger() {
   const router = useRouter();
@@ -35,10 +19,10 @@ export function VerificationTrigger() {
     setError(null);
     setActiveStep(1);
 
-    // Step animation interval
+    // Step animation interval: sequentially progress through the 6 stages
     const stepInterval = setInterval(() => {
       setActiveStep((prev) => (prev < 6 ? prev + 1 : prev));
-    }, 400);
+    }, 450);
 
     try {
       const res = await fetch("/api/reconciliation/run", {
@@ -53,129 +37,100 @@ export function VerificationTrigger() {
       }
 
       clearInterval(stepInterval);
-      setActiveStep(6);
+      setActiveStep(7); // complete
       setResult(data.result);
       router.refresh();
-    } catch (err: any) {
+    } catch (err: unknown) {
       clearInterval(stepInterval);
-      setError(err.message || "An unexpected error occurred");
+      setError(err instanceof Error ? err.message : "An unexpected error occurred");
     } finally {
       setIsRunning(false);
     }
   };
 
+  const hasExceptions = result?.stats ? result.stats.exceptionsCount > 0 : true;
+
   return (
-    <div className="bg-white rounded-xl border border-[#E6E9EF] p-5 shadow-sm space-y-4">
+    <div className="bg-white/92 backdrop-blur-md border border-[#E9E6DF] rounded-[20px] p-5 sm:p-6 shadow-[0_1px_2px_rgba(23,22,26,.04),0_10px_30px_-14px_rgba(23,22,26,.12)] rise d1 space-y-4">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-base font-bold text-[#0F172A]">
-              Deterministic Verification Engine
-            </h2>
-            <StatusPill status="AUTO_MATCHED" label="Deterministic IP" size="xs" variant="blue" />
+        <div className="flex items-start sm:items-center gap-3.5">
+          <div className="w-[42px] h-[42px] rounded-xl bg-[#EEEDFB] text-[#4F46E5] grid place-items-center shrink-0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M8 5.5v13l11-6.5-11-6.5z" />
+            </svg>
           </div>
-          <p className="text-xs text-[#64748B] mt-1">
-            Reconciles bank statements against general ledger entries and sales tax invoices with explainable audit trails.
-          </p>
+          <div>
+            <div className="font-bold text-[15px] text-[#17161A]">
+              The checking machine
+            </div>
+            <div className="text-[12.5px] text-[#6E6A61]">
+              Runs quietly every day — compares your bank, your books and your invoices
+            </div>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5 flex-wrap">
           <select
             value={period}
             onChange={(e) => setPeriod(e.target.value)}
             disabled={isRunning}
-            className="text-xs font-mono font-medium border border-[#E6E9EF] rounded-lg px-3 py-2 bg-[#F7F8FA] text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+            className="px-3.5 py-2 rounded-xl border border-[#E9E6DF] font-semibold text-[13px] bg-white text-[#17161A] focus:outline-none focus:border-[#4F46E5]"
           >
-            <option value="2026-04">April 2026 (Active Period)</option>
+            <option value="2026-04">April 2026</option>
             <option value="2026-03">March 2026</option>
             <option value="2026-05">May 2026</option>
           </select>
 
           <button
+            type="button"
+            id="runBtn"
             onClick={handleRun}
             disabled={isRunning}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-semibold shadow-sm transition-all disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 font-semibold text-[13.5px] px-4 py-2 rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] text-white shadow-[0_8px_20px_-10px_rgba(79,70,229,.6)] transition-all hover:-translate-y-0.5 disabled:opacity-50 cursor-pointer"
           >
-            {isRunning ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Running Pipeline...</span>
-              </>
-            ) : (
-              <>
-                <Play className="w-3.5 h-3.5 fill-current" />
-                <span>Run Verification</span>
-              </>
-            )}
+            <span>{isRunning ? "Checking numbers…" : result ? "Check again ↺" : "Check my numbers ▸"}</span>
           </button>
         </div>
       </div>
 
-      {/* 6-Step Pipeline Progress Bar (Visible while running or active) */}
-      {isRunning && (
-        <div className="pt-2 pb-1 space-y-3">
-          <div className="flex items-center justify-between text-xs font-semibold text-[#0F172A]">
-            <span className="flex items-center gap-1.5 text-[#2563EB]">
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              <span>Executing step {activeStep} of 6: {PIPELINE_STEPS[activeStep - 1]?.name}</span>
-            </span>
-            <span className="font-mono text-[#64748B]">
-              {Math.round((activeStep / 6) * 100)}%
-            </span>
-          </div>
+      {/* 6-Stage Progress Pipeline */}
+      {(isRunning || activeStep > 0) && (
+        <div className="border-t border-dashed border-[#E9E6DF] pt-3.5">
+          <PipelineSteps activeStep={activeStep} />
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
-            {PIPELINE_STEPS.map((step) => {
-              const isDone = activeStep > step.id;
-              const isCurrent = activeStep === step.id;
-              return (
-                <div
-                  key={step.id}
-                  className={`p-2 rounded-lg border text-left transition-all ${
-                    isDone
-                      ? "bg-emerald-50 border-emerald-200 text-emerald-800"
-                      : isCurrent
-                      ? "bg-blue-50 border-[#2563EB] text-[#2563EB] ring-1 ring-[#2563EB]"
-                      : "bg-[#F7F8FA] border-[#E6E9EF] text-slate-400"
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold">
-                      {step.id}. {step.name}
-                    </span>
-                    {isDone ? (
-                      <CheckCircle2 className="w-3.5 h-3.5 text-[#16A34A]" />
-                    ) : isCurrent ? (
-                      <Loader2 className="w-3 h-3 animate-spin text-[#2563EB]" />
-                    ) : (
-                      <span className="w-2 h-2 rounded-full bg-slate-300" />
-                    )}
-                  </div>
-                  <p className="text-[9.5px] mt-0.5 leading-tight opacity-80 truncate">
-                    {step.desc}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
+          {/* Plain Language Result Message */}
+          {!isRunning && result && (
+            <div
+              className={`mt-3.5 p-3 sm:px-4 rounded-xl text-[13px] font-semibold border ${
+                hasExceptions
+                  ? "bg-[#FCF2E2] text-[#B45309] border-[#F0DDBB]"
+                  : "bg-[#E7F5EE] text-[#188A54] border-[#CBE6D8]"
+              }`}
+            >
+              {hasExceptions
+                ? `✓ Check complete — your numbers are healthy. ${result.stats.exceptionsCount} question${
+                    result.stats.exceptionsCount > 1 ? "s" : ""
+                  } waiting for you below.`
+                : "✓ Check complete — everything matches. Nothing for you to do."}
+            </div>
+          )}
         </div>
       )}
 
       {error && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 flex items-center gap-2">
-          <AlertTriangle className="w-4 h-4 shrink-0 text-red-600" />
+        <div className="p-3 bg-[#FBECEA] border border-[#F2CBC8] rounded-xl text-xs text-[#C0362C] font-semibold flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4 shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
       {/* Post-Run Result Card */}
       {result && !isRunning && (
-        <div className="mt-3 p-4 bg-[#F7F8FA] border border-[#E6E9EF] rounded-xl space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#E6E9EF] pb-3">
+        <div className="mt-3 p-4 bg-[#FAF9F6] border border-[#F1EFE9] rounded-xl space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#F1EFE9] pb-3">
             <div className="flex items-center gap-2 flex-wrap">
-              <CheckCircle2 className="w-4 h-4 text-[#16A34A]" />
-              <span className="text-xs font-bold text-[#0F172A]">
-                Run #{result.runId.slice(-6).toUpperCase()} Executed
+              <span className="text-xs font-bold text-[#17161A] font-mono">
+                Run #{result.runId.slice(-6).toUpperCase()}
               </span>
               <StatusPill
                 status="COMPREHENSIVE"
@@ -184,51 +139,53 @@ export function VerificationTrigger() {
                 size="xs"
               />
             </div>
-            <span className="text-xs text-[#64748B] italic">
+            <span className="text-xs text-[#6E6A61] italic">
               {result.diffSummary}
             </span>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-            <div className="bg-white p-3 rounded-lg border border-[#E6E9EF]">
-              <span className="text-[#64748B] block text-[11px] font-medium">Reconciliation Coverage</span>
-              <span className="text-xl font-extrabold text-[#0F172A] font-mono tabular-nums">
+            <div className="bg-white p-3 rounded-lg border border-[#E9E6DF]">
+              <span className="text-[#6E6A61] block text-[11px] font-medium">Reconciliation Coverage</span>
+              <span className="text-xl font-extrabold text-[#17161A] font-mono tabular-nums">
                 {result.stats.coveragePercent}%
               </span>
             </div>
 
-            <div className="bg-white p-3 rounded-lg border border-[#E6E9EF]">
-              <span className="text-[#64748B] block text-[11px] font-medium">Matched Transactions</span>
-              <span className="text-xl font-extrabold text-[#16A34A] font-mono tabular-nums">
+            <div className="bg-white p-3 rounded-lg border border-[#E9E6DF]">
+              <span className="text-[#6E6A61] block text-[11px] font-medium">Matched Transactions</span>
+              <span className="text-xl font-extrabold text-[#188A54] font-mono tabular-nums">
                 {result.stats.matchedCount} / {result.stats.totalBankTransactions}
               </span>
             </div>
 
-            <div className="bg-white p-3 rounded-lg border border-[#E6E9EF]">
-              <span className="text-[#64748B] block text-[11px] font-medium">Unmatched Items</span>
-              <span className="text-xl font-extrabold text-[#D97706] font-mono tabular-nums">
+            <div className="bg-white p-3 rounded-lg border border-[#E9E6DF]">
+              <span className="text-[#6E6A61] block text-[11px] font-medium">Unmatched Items</span>
+              <span className="text-xl font-extrabold text-[#B45309] font-mono tabular-nums">
                 {result.stats.unmatchedBankCount} bank &bull; {result.stats.unmatchedLedgerCount} ledger
               </span>
             </div>
 
-            <div className="bg-white p-3 rounded-lg border border-[#E6E9EF]">
-              <span className="text-[#64748B] block text-[11px] font-medium">Surfaced Exceptions</span>
-              <span className="text-xl font-extrabold text-[#DC2626] font-mono tabular-nums">
+            <div className="bg-white p-3 rounded-lg border border-[#E9E6DF]">
+              <span className="text-[#6E6A61] block text-[11px] font-medium">Surfaced Exceptions</span>
+              <span className="text-xl font-extrabold text-[#C0362C] font-mono tabular-nums">
                 {result.stats.exceptionsCount} Total
               </span>
             </div>
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 text-xs">
-            <p className="text-[#64748B] text-[11px]">
-              <strong className="text-[#0F172A]">Level Status: </strong>
+            <p className="text-[#6E6A61] text-[11px]">
+              <strong className="text-[#17161A]">Level Status: </strong>
               {result.verificationLevel.levelReason} {result.verificationLevel.nextSteps}
             </p>
             <button
+              type="button"
               onClick={() => router.push("/portal/exceptions")}
-              className="inline-flex items-center gap-1 text-[#2563EB] hover:underline font-semibold text-xs shrink-0"
+              className="inline-flex items-center gap-1 text-[#4F46E5] hover:underline font-semibold text-xs shrink-0 cursor-pointer"
             >
-              Resolve Exceptions <ArrowRight className="w-3.5 h-3.5" />
+              <span>Resolve Exceptions</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>

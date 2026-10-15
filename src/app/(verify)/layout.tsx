@@ -8,9 +8,9 @@ export default function PublicVerifyLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen flex flex-col bg-[#F7F8FA]">
+    <div className="min-h-screen flex flex-col bg-[#FAF9F6] text-[#17161A]">
       {/* Top Header */}
-      <header className="sticky top-0 z-30 bg-white border-b border-[#E6E9EF]">
+      <header className="sticky top-0 z-30 bg-white/90 backdrop-blur border-b border-[#E9E6DF]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link href="/verify" className="flex items-center gap-2.5">
@@ -47,7 +47,7 @@ export default function PublicVerifyLayout({
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-[#E6E9EF] bg-white py-6 text-xs text-[#64748B] text-center">
+      <footer className="border-t border-[#E9E6DF] bg-white/80 py-6 text-xs text-[#6E6A63] text-center">
         <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div>
             Attest Public Financial Assurance Registry &bull; Verified via Append-Only Audit Trail

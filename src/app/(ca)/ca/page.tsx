@@ -1,7 +1,6 @@
 import React from "react";
 import Link from "next/link";
 import {
-  ShieldCheck,
   Scale,
   FileCheck2,
   Clock,
@@ -10,16 +9,16 @@ import {
   CheckCircle2,
   AlertTriangle,
   Building2,
-  Calendar,
-  Layers,
   ChevronRight,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { formatPaise } from "@/lib/money";
-import { formatEnumLabel, formatShortHash, formatRelativeTime } from "@/lib/labels";
+import { formatEnumLabel, formatShortHash, formatRelativeTime, getOwnerFriendlyException } from "@/lib/labels";
 import { StatusPill } from "@/components/ui/StatusPill";
+import { Tag } from "@/components/ui/Tag";
 import { CopyButton } from "@/components/ui/CopyButton";
 import { PriorityScoreChip } from "@/components/ca/PriorityScoreChip";
+import { ExceptionRow } from "@/components/ui/ExceptionRow";
 
 export default async function CAConsoleDashboard() {
   const org = await prisma.organization.findFirst({
@@ -44,10 +43,8 @@ export default async function CAConsoleDashboard() {
 
   const cert = org?.certificates[0];
   const allExceptions = org?.exceptions || [];
-  const bankTxs = org?.bankTransactions || [];
-  const ledgerEntries = org?.ledgerEntries || [];
 
-  // Live CA Overview Metrics (Requirement 7)
+  // Live CA Overview Metrics
   const pendingSubmissions = allExceptions.filter((e) => e.status === "CLIENT_SUBMITTED");
   const resolvedThisMonth = allExceptions.filter((e) => e.status === "RESOLVED");
   const highSeverityOpen = allExceptions.filter(
@@ -104,252 +101,250 @@ export default async function CAConsoleDashboard() {
     .sort((a, b) => b.score - a.score);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Top Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-[28px] font-extrabold tracking-tight text-[#0F172A]">
-              CA Assurance &amp; Review Chamber
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <h1 className="font-heading text-2xl sm:text-[28px] font-extrabold tracking-tight text-[#17161A]">
+              Review queue, Ayesha
             </h1>
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-[#2563EB] border border-blue-200">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              Chartered Accountant License Verified
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#EEEDFB] text-[#4F46E5] border border-[#DCD9F8]">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+              <span>Licensed Chartered Accountant (ICAP)</span>
             </span>
           </div>
-          <p className="text-xs text-[#64748B] mt-1">
-            Engagement: <span className="font-semibold text-[#0F172A]">{org?.name}</span> &bull; Period: April 2026 &bull; Framework: IFRS for SMEs
+          <p className="text-xs text-[#6E6A61] mt-1">
+            Engagement: <span className="font-semibold text-[#17161A]">{org?.name}</span> &bull; Period: April 2026 &bull; Framework: IFRS for SMEs
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           <Link
             href="/ca/exceptions"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold shadow-sm transition-colors"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white border border-[#E9E6DF] hover:border-[#D5D0C6] text-[#17161A] text-xs font-semibold transition-all hover:-translate-y-0.5"
           >
-            <Scale className="w-4 h-4" />
-            Review {allExceptions.length} Exceptions
+            <Scale className="w-4 h-4 text-[#4F46E5]" />
+            <span>Exceptions Desk</span>
           </Link>
           <Link
             href="/ca/sign-off"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white text-xs font-semibold shadow-sm transition-colors"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] text-white text-xs font-semibold shadow-[0_8px_20px_-10px_rgba(79,70,229,.6)] transition-all hover:-translate-y-0.5"
           >
             <FileCheck2 className="w-4 h-4" />
-            Sign-Off Chamber
+            <span>Sign-Off Chamber</span>
           </Link>
         </div>
       </div>
 
       {/* Constitutional Authority Rule Alert */}
-      <div className="bg-white border-l-4 border-l-[#2563EB] border border-[#E6E9EF] rounded-xl p-5 shadow-sm">
-        <div className="flex items-start gap-3">
-          <ShieldCheck className="w-5 h-5 text-[#2563EB] mt-0.5 shrink-0" />
+      <div className="bg-white/92 backdrop-blur-md border-l-4 border-l-[#4F46E5] border border-[#E9E6DF] rounded-[20px] p-5 shadow-[0_1px_2px_rgba(23,22,26,.04),0_10px_30px_-14px_rgba(23,22,26,.12)]">
+        <div className="flex items-start gap-3.5">
+          <div className="w-9 h-9 rounded-xl bg-[#EEEDFB] text-[#4F46E5] grid place-items-center shrink-0 mt-0.5">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+          </div>
           <div className="text-xs">
-            <div className="font-bold text-[#0F172A] text-sm">
+            <div className="font-bold text-[#17161A] text-sm">
               Constitutional Authority Rule In Effect
             </div>
-            <p className="text-[#64748B] mt-1 leading-relaxed">
+            <p className="text-[#6E6A61] mt-1 leading-relaxed">
               <em>&ldquo;AI proposes. Deterministic code validates. Authorized humans approve.&rdquo;</em>
               <br />
-              As the licensed CA-reviewer, your physical approval and cryptographic key are required to transition Certificate <span className="font-mono font-semibold text-[#0F172A]">{cert?.publicId}</span> from{" "}
-              <span className="font-semibold text-amber-700">{formatEnumLabel(cert?.status || "PENDING_REVIEW")}</span> to{" "}
-              <span className="font-semibold text-emerald-700">{formatEnumLabel("ISSUED")}</span>.
+              As the licensed CA-reviewer, your physical judgment and cryptographic approval are required to issue or revoke certificates. Deterministic algorithms validate data; you judge evidence completeness.
             </p>
           </div>
         </div>
       </div>
 
-      {/* Screen C Live Metric Cards (Requirement 7) */}
+      {/* Live Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Metric 1: Pending Submissions */}
+        {/* Metric 1 */}
         <Link
           href="/ca/exceptions?filter=CLIENT_SUBMITTED"
-          className="bg-white p-5 rounded-xl border border-[#E6E9EF] shadow-sm flex items-start gap-3.5 hover:border-[#2563EB]/40 hover:shadow-md transition-all group"
+          className="bg-white/92 backdrop-blur-md p-5 rounded-[20px] border border-[#E9E6DF] shadow-[0_1px_2px_rgba(23,22,26,.04),0_10px_30px_-14px_rgba(23,22,26,.12)] flex items-start gap-3.5 hover:border-[#DCD9F8] hover:-translate-y-0.5 transition-all group"
         >
-          <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-[#2563EB] shrink-0 group-hover:bg-[#2563EB] group-hover:text-white transition-colors">
+          <div className="w-10 h-10 rounded-xl bg-[#EEEDFB] text-[#4F46E5] grid place-items-center shrink-0">
             <FileCheck2 className="w-5 h-5" />
           </div>
           <div className="flex-1 min-w-0">
-            <span className="text-xs font-medium text-[#64748B]">Pending Submissions</span>
-            <div className="text-2xl font-bold font-mono tracking-tight text-[#0F172A] mt-1 tabular-nums">
+            <span className="text-xs font-semibold text-[#A8A296] uppercase tracking-wider block">
+              Pending Submissions
+            </span>
+            <div className="text-2xl font-extrabold font-mono tracking-tight text-[#17161A] mt-1 tabular-nums">
               {pendingSubmissions.length}
             </div>
-            <div className="text-xs text-[#2563EB] font-medium mt-1">
+            <div className="text-xs text-[#4F46E5] font-semibold mt-1">
               Awaiting CA review &rarr;
             </div>
           </div>
         </Link>
 
-        {/* Metric 2: Average Turnaround */}
+        {/* Metric 2 */}
         <Link
           href="/ca/exceptions"
-          className="bg-white p-5 rounded-xl border border-[#E6E9EF] shadow-sm flex items-start gap-3.5 hover:border-[#2563EB]/40 hover:shadow-md transition-all group"
+          className="bg-white/92 backdrop-blur-md p-5 rounded-[20px] border border-[#E9E6DF] shadow-[0_1px_2px_rgba(23,22,26,.04),0_10px_30px_-14px_rgba(23,22,26,.12)] flex items-start gap-3.5 hover:border-[#DCD9F8] hover:-translate-y-0.5 transition-all group"
         >
-          <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-[#2563EB] shrink-0 group-hover:bg-[#2563EB] group-hover:text-white transition-colors">
+          <div className="w-10 h-10 rounded-xl bg-[#EEEDFB] text-[#4F46E5] grid place-items-center shrink-0">
             <Clock className="w-5 h-5" />
           </div>
           <div className="flex-1 min-w-0">
-            <span className="text-xs font-medium text-[#64748B]">Average Turnaround</span>
-            <div className="text-2xl font-bold font-mono tracking-tight text-[#0F172A] mt-1 tabular-nums">
+            <span className="text-xs font-semibold text-[#A8A296] uppercase tracking-wider block">
+              Average Turnaround
+            </span>
+            <div className="text-2xl font-extrabold font-mono tracking-tight text-[#17161A] mt-1 tabular-nums">
               {avgTurnaroundDisplay}
             </div>
-            <div className="text-xs text-[#64748B] mt-1">Review cycle speed</div>
+            <div className="text-xs text-[#6E6A61] mt-1">Review cycle speed</div>
           </div>
         </Link>
 
-        {/* Metric 3: Resolved This Month */}
+        {/* Metric 3 */}
         <Link
           href="/ca/exceptions?filter=RESOLVED"
-          className="bg-white p-5 rounded-xl border border-[#E6E9EF] shadow-sm flex items-start gap-3.5 hover:border-emerald-300 hover:shadow-md transition-all group"
+          className="bg-white/92 backdrop-blur-md p-5 rounded-[20px] border border-[#E9E6DF] shadow-[0_1px_2px_rgba(23,22,26,.04),0_10px_30px_-14px_rgba(23,22,26,.12)] flex items-start gap-3.5 hover:border-[#CBE6D8] hover:-translate-y-0.5 transition-all group"
         >
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+          <div className="w-10 h-10 rounded-xl bg-[#E7F5EE] text-[#188A54] grid place-items-center shrink-0">
             <CheckCircle2 className="w-5 h-5" />
           </div>
           <div className="flex-1 min-w-0">
-            <span className="text-xs font-medium text-[#64748B]">Resolved This Month</span>
-            <div className="text-2xl font-bold font-mono tracking-tight text-emerald-600 mt-1 tabular-nums">
+            <span className="text-xs font-semibold text-[#A8A296] uppercase tracking-wider block">
+              Resolved This Month
+            </span>
+            <div className="text-2xl font-extrabold font-mono tracking-tight text-[#188A54] mt-1 tabular-nums">
               {resolvedThisMonth.length}
             </div>
-            <div className="text-xs text-emerald-700 font-medium mt-1">Corroborated with evidence</div>
+            <div className="text-xs text-[#188A54] font-semibold mt-1">Corroborated with evidence</div>
           </div>
         </Link>
 
-        {/* Metric 4: High-Severity Open */}
+        {/* Metric 4 */}
         <Link
           href="/ca/exceptions?filter=HIGH_SEVERITY"
-          className="bg-white p-5 rounded-xl border border-[#E6E9EF] shadow-sm flex items-start gap-3.5 hover:border-amber-300 hover:shadow-md transition-all group"
+          className="bg-white/92 backdrop-blur-md p-5 rounded-[20px] border border-[#E9E6DF] shadow-[0_1px_2px_rgba(23,22,26,.04),0_10px_30px_-14px_rgba(23,22,26,.12)] flex items-start gap-3.5 hover:border-[#F0DDBB] hover:-translate-y-0.5 transition-all group"
         >
-          <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-[#D97706] shrink-0 group-hover:bg-amber-600 group-hover:text-white transition-colors">
+          <div className="w-10 h-10 rounded-xl bg-[#FCF2E2] text-[#B45309] grid place-items-center shrink-0">
             <AlertTriangle className="w-5 h-5" />
           </div>
           <div className="flex-1 min-w-0">
-            <span className="text-xs font-medium text-[#64748B]">High-Severity Open</span>
-            <div className="text-2xl font-bold font-mono tracking-tight text-[#D97706] mt-1 tabular-nums">
+            <span className="text-xs font-semibold text-[#A8A296] uppercase tracking-wider block">
+              High-Severity Open
+            </span>
+            <div className="text-2xl font-extrabold font-mono tracking-tight text-[#B45309] mt-1 tabular-nums">
               {highSeverityOpen.length}
             </div>
-            <div className="text-xs text-amber-700 font-medium mt-1">Requires immediate scrutiny</div>
+            <div className="text-xs text-[#B45309] font-semibold mt-1">Requires immediate review</div>
           </div>
         </Link>
       </div>
 
-      {/* Screen C Requirement: Ranked Review Queue Table */}
-      <div className="bg-white border border-[#E6E9EF] rounded-xl shadow-sm overflow-hidden">
-        <div className="p-5 border-b border-[#E6E9EF] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+      {/* Prioritized Review Queue — styled with ExceptionRow */}
+      <div className="bg-white/92 backdrop-blur-md border border-[#E9E6DF] rounded-[20px] shadow-[0_1px_2px_rgba(23,22,26,.04),0_10px_30px_-14px_rgba(23,22,26,.12)] overflow-hidden rise d1">
+        <div className="p-5 sm:px-6 border-b border-[#F1EFE9] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
-            <h2 className="text-lg font-bold text-[#0F172A] flex items-center gap-2">
-              <Scale className="w-5 h-5 text-amber-600" />
-              Prioritized Review Queue
+            <h2 className="text-lg font-bold text-[#17161A] flex items-center gap-2">
+              <Scale className="w-5 h-5 text-[#B45309]" />
+              <span>Prioritized Review Queue</span>
             </h2>
-            <p className="text-xs text-[#64748B] mt-0.5">
-              Ranked dynamically by severity weight, value at risk, and aging factors.
+            <p className="text-xs text-[#6E6A61] mt-0.5">
+              Ranked dynamically by severity weight, value at risk, and aging factors. Click to examine workpaper.
             </p>
           </div>
           <Link
             href="/ca/exceptions"
-            className="text-xs font-semibold text-[#2563EB] hover:underline flex items-center gap-1"
+            className="text-xs font-semibold text-[#4F46E5] hover:underline flex items-center gap-1 shrink-0"
           >
-            <span>Open Exceptions Workspace</span>
+            <span>Open All Exceptions</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-[#F7F8FA] text-[#64748B] font-semibold border-b border-[#E6E9EF]">
-              <tr>
-                <th className="py-3 px-4 w-12 text-center">Rank</th>
-                <th className="py-3 px-4">Priority Score</th>
-                <th className="py-3 px-4">Severity</th>
-                <th className="py-3 px-4">Discrepancy Details</th>
-                <th className="py-3 px-4 text-right">Value at Risk</th>
-                <th className="py-3 px-4 text-center">Days Waiting</th>
-                <th className="py-3 px-4 text-center">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#E6E9EF]">
-              {rankedExceptions.map((exc, idx) => (
-                <tr key={exc.id} className="hover:bg-blue-50/30 transition-colors">
-                  <td className="py-3.5 px-4 text-center font-mono font-bold text-[#64748B]">
-                    #{idx + 1}
-                  </td>
-                  <td className="py-3.5 px-4">
-                    <PriorityScoreChip
-                      score={exc.score}
-                      severity={exc.severity}
-                      amountPaise={exc.amountPaise}
-                      daysWaiting={exc.daysWaiting}
-                    />
-                  </td>
-                  <td className="py-3.5 px-4">
-                    <StatusPill rawValue={exc.severity} type="severity" />
-                  </td>
-                  <td className="py-3.5 px-4 max-w-md">
-                    <div className="font-semibold text-[#0F172A]">{exc.title}</div>
-                    <div className="text-[11px] text-[#64748B] line-clamp-1 mt-0.5">
-                      {exc.explanation}
-                    </div>
-                  </td>
-                  <td className="py-3.5 px-4 text-right font-mono font-bold text-[#0F172A] tabular-nums">
-                    {formatPaise(exc.amountPaise)}
-                  </td>
-                  <td className="py-3.5 px-4 text-center">
-                    <span className="font-mono text-xs text-[#0F172A] font-medium bg-gray-100 px-2 py-0.5 rounded">
-                      {exc.daysWaiting} {exc.daysWaiting === 1 ? "day" : "days"}
-                    </span>
-                  </td>
-                  <td className="py-3.5 px-4 text-center">
-                    <Link
-                      href={`/ca/exceptions/${exc.id}`}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#2563EB] hover:bg-blue-700 text-white font-medium text-xs transition-colors"
-                    >
-                      <span>Examine Workpaper</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        {/* Queue Rows using ExceptionRow Styling */}
+        <div>
+          {rankedExceptions.map((exc, idx) => {
+            const friendly = getOwnerFriendlyException(exc);
+
+            return (
+              <Link
+                key={exc.id}
+                href={`/ca/exceptions/${exc.id}`}
+                className="block hover:bg-[#FCFBF8] transition-colors"
+              >
+                <ExceptionRow
+                  id={exc.id.slice(-5).toUpperCase()}
+                  title={friendly.title}
+                  description={friendly.description}
+                  amountFormatted={formatPaise(exc.amountPaise)}
+                  severity={exc.severity}
+                  tagText={friendly.tagText}
+                  done={exc.status === "RESOLVED"}
+                  extraMeta={
+                    <>
+                      <PriorityScoreChip
+                        score={exc.score}
+                        severity={exc.severity}
+                        amountPaise={exc.amountPaise}
+                        daysWaiting={exc.daysWaiting}
+                      />
+                      <Tag variant="mut" mono>
+                        {exc.daysWaiting}d waiting
+                      </Tag>
+                      <StatusPill status={exc.status} size="xs" />
+                    </>
+                  }
+                />
+              </Link>
+            );
+          })}
+
+          {rankedExceptions.length === 0 && (
+            <div className="p-8 text-center text-[#188A54] font-bold text-sm bg-[#E7F5EE]/40">
+              ✓ Queue clear — zero exceptions awaiting professional judgment.
+            </div>
+          )}
         </div>
       </div>
 
       {/* Audit Hash Chain Preview */}
-      <div className="bg-white border border-[#E6E9EF] rounded-xl p-5 shadow-sm space-y-4">
-        <div className="flex items-center justify-between border-b border-[#E6E9EF] pb-3">
+      <div className="bg-white/92 backdrop-blur-md border border-[#E9E6DF] rounded-[20px] p-5 sm:p-6 shadow-[0_1px_2px_rgba(23,22,26,.04),0_10px_30px_-14px_rgba(23,22,26,.12)] space-y-4 rise d2">
+        <div className="flex items-center justify-between border-b border-[#F1EFE9] pb-3">
           <div>
-            <h2 className="text-base font-bold text-[#0F172A] flex items-center gap-2">
-              <GitCommit className="w-4 h-4 text-[#2563EB]" />
-              Immutable Audit Hash Chain (Recent Activity)
+            <h2 className="text-base font-bold text-[#17161A] flex items-center gap-2">
+              <GitCommit className="w-4 h-4 text-[#4F46E5]" />
+              <span>Immutable Audit Hash Chain (Recent Activity)</span>
             </h2>
-            <p className="text-xs text-[#64748B]">
+            <p className="text-xs text-[#6E6A61] mt-0.5">
               Cryptographically chained SHA-256 events recording all state transitions.
             </p>
           </div>
           <Link
             href="/ca/audit-trail"
-            className="text-xs text-[#2563EB] font-semibold hover:underline flex items-center gap-1"
+            className="text-xs text-[#4F46E5] font-semibold hover:underline flex items-center gap-1"
           >
             <span>Inspect full chain</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {org?.auditEvents.map((evt) => (
             <div
               key={evt.id}
-              className="p-3.5 rounded-xl border border-[#E6E9EF] bg-[#F7F8FA] hover:bg-white text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors"
+              className="p-3.5 rounded-xl border border-[#F1EFE9] bg-[#FAF9F6] hover:bg-white text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors"
             >
               <div className="flex items-center gap-3">
-                <div className="w-7 h-7 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-[#2563EB] shrink-0">
-                  <GitCommit className="w-4 h-4" />
+                <div className="w-7 h-7 rounded-lg bg-[#EEEDFB] text-[#4F46E5] grid place-items-center shrink-0">
+                  <GitCommit className="w-3.5 h-3.5" />
                 </div>
                 <div>
-                  <div className="font-semibold text-[#0F172A]">
+                  <div className="font-semibold text-[#17161A]">
                     {formatEnumLabel(evt.action)}
                   </div>
-                  <div className="text-[11px] text-[#64748B] flex items-center gap-2 mt-0.5">
-                    <span>Actor: {evt.actor?.name || "System Engine"}</span>
+                  <div className="text-[11px] text-[#6E6A61] flex items-center gap-2 mt-0.5">
+                    <span>Actor: {evt.actor?.name || "Deterministic Engine"}</span>
                     <span>&bull;</span>
                     <span>{formatRelativeTime(evt.createdAt)}</span>
                   </div>
@@ -357,8 +352,8 @@ export default async function CAConsoleDashboard() {
               </div>
 
               <div className="flex items-center gap-2 self-start sm:self-auto">
-                <span className="text-[11px] text-[#64748B]">Hash:</span>
-                <span className="font-mono text-xs font-semibold text-[#2563EB] bg-white px-2 py-0.5 rounded border border-[#E6E9EF]">
+                <span className="text-[11px] text-[#A8A296]">Hash:</span>
+                <span className="font-mono text-xs font-semibold text-[#4F46E5] bg-white px-2 py-0.5 rounded-lg border border-[#E9E6DF]">
                   {formatShortHash(evt.hash, 8)}
                 </span>
                 <CopyButton value={evt.hash} label="Copy full hash" />

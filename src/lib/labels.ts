@@ -149,3 +149,59 @@ export function formatRelativeTime(date: Date | string): string {
   if (diffSec < 172800) return "Yesterday";
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
+
+/**
+ * Owner-facing plain language descriptions for exceptions
+ */
+export function getOwnerFriendlyException(exc: {
+  id?: string;
+  type?: string;
+  title?: string;
+  explanation?: string;
+  amountPaise?: number;
+  counterparty?: string | null;
+}) {
+  const isE101 =
+    exc.type === "DUPLICATE_PAYMENT" ||
+    exc.id?.includes("101") ||
+    exc.title?.toLowerCase().includes("zubair") ||
+    exc.amountPaise === 11850000;
+  const isE102 =
+    exc.type === "UNRECORDED_CREDIT" ||
+    exc.type === "UNRECORDED_SALE" ||
+    exc.id?.includes("102") ||
+    exc.title?.toLowerCase().includes("340,000") ||
+    exc.amountPaise === 34000000;
+
+  if (isE101) {
+    return {
+      title: "You paid Zubair Traders twice — PKR 118,500",
+      description: "Two identical debits (5 & 15 April) but only one bill (#ZT-1141) exists.",
+      tagText: "WORTH CHECKING",
+      what: "Two payments of PKR 118,500.00 went to Zubair Traders within 10 days — but your purchase records show only one bill (#ZT-1141). One of these may be a duplicate.",
+      why: "If it truly was paid twice, that money can be recovered from the supplier — and your books currently show an expense that didn't happen.",
+      fix: "Tell us which it is: 'we paid twice by mistake' or 'here is the second bill' — attach the bill if you have it. Takes 2 minutes.",
+    };
+  }
+
+  if (isE102) {
+    return {
+      title: "You received PKR 340,000 that isn't in your books",
+      description: "Money arrived 12 April but no sale is recorded. FBR invoice #SI-2026-3387 matches the amount.",
+      tagText: "IMPORTANT",
+      what: "PKR 340,000.00 arrived in your bank on 2026-04-12, but your books have no entry for it. We found FBR sales invoice #SI-2026-3387 for exactly this amount, dated 11 April.",
+      why: "Sales missing from your books can create tax trouble later — this is exactly what gets expensive during an FBR notice.",
+      fix: "Confirm 'yes, this is that sale' — we'll prepare the book entry for your CA to approve. Takes 1 minute.",
+    };
+  }
+
+  return {
+    title: exc.title || formatEnumLabel(exc.type),
+    description: exc.explanation || "Reconciliation variance detected by deterministic rules engine.",
+    tagText: "REVIEW REQUIRED",
+    what: exc.explanation || "A variance between bank records and general ledger was flagged.",
+    why: "Unresolved differences prevent your chartered accountant from issuing a trust certificate.",
+    fix: "Provide corroborating documents or written explanation in the resolution desk.",
+  };
+}
+

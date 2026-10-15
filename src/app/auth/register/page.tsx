@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ShieldCheck, ArrowRight, AlertCircle, CheckCircle2 } from "lucide-react";
+import { GraffitiBackdrop } from "@/components/ui/GraffitiBackdrop";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -38,127 +38,140 @@ export default function RegisterPage() {
           router.push("/auth/signin");
         }, 1500);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError("An unexpected error occurred during registration.");
       setLoading(false);
     }
   }
 
   return (
-    <div className="min-h-screen bg-[#F7F8FA] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="flex justify-center items-center gap-2.5 mb-3">
-          <div className="w-11 h-11 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-[#2563EB] shadow-sm">
-            <ShieldCheck className="w-6 h-6" />
-          </div>
-          <span className="text-2xl font-extrabold tracking-tight text-[#0F172A]">Attest</span>
+    <div className="relative min-h-screen bg-[#FAF9F6] text-[#17161A] flex items-center justify-center p-5 overflow-hidden">
+      <GraffitiBackdrop />
+
+      <div className="relative z-10 w-full max-w-[460px] bg-white/94 backdrop-blur-md border border-[#E9E6DF] rounded-[22px] p-8 sm:p-9 shadow-[0_24px_60px_-26px_rgba(23,22,26,.25)] rise">
+        <div className="flex justify-center mb-3.5">
+          <Link href="/" className="flex items-center gap-2.5 font-extrabold text-[19px] tracking-tight">
+            <span className="w-8 h-8 rounded-[10px] bg-[#4F46E5] grid place-items-center text-white shrink-0 shadow-sm">
+              <svg width="16" height="16" viewBox="0 0 32 32">
+                <path d="M11 16.5l4 4 9.5-11" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
+            <span>Attest</span>
+          </Link>
         </div>
-        <h1 className="text-center text-xl font-bold tracking-tight text-[#0F172A]">
-          Register Organization &amp; Assurance Workspace
+
+        <h1 className="font-heading text-[23px] font-extrabold text-center tracking-tight text-[#17161A]">
+          Create your workspace
         </h1>
-        <p className="mt-1 text-center text-xs text-[#64748B]">
-          Continuous assurance engine with deterministic multi-tenant isolation
+        <p className="text-center text-[#6E6A61] text-[13.5px] mt-1 mb-5">
+          Free during the pilot — your first certificate in 48 hours
         </p>
-      </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-7 px-6 border border-[#E6E9EF] rounded-xl shadow-sm sm:px-8">
-          {error && (
-            <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 flex items-start gap-2 text-xs text-red-800">
-              <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 shrink-0" />
-              <span>{error}</span>
+        {success ? (
+          <div className="bg-[#E7F5EE] border border-[#CBE6D8] rounded-xl p-5 text-center text-[#188A54] space-y-2">
+            <div className="w-10 h-10 rounded-full bg-[#188A54] text-white grid place-items-center mx-auto text-lg font-bold">
+              ✓
             </div>
-          )}
-
-          {success && (
-            <div className="mb-4 p-3 rounded-lg bg-emerald-50 border border-emerald-200 flex items-start gap-2 text-xs text-emerald-800">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
-              <span>Workspace registered! Redirecting to sign in...</span>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-[#0F172A]">Company / Entity Name</label>
-              <input
-                type="text"
-                required
-                value={orgName}
-                onChange={(e) => setOrgName(e.target.value)}
-                placeholder="e.g. Apex Industrial Solutions (Pvt) Ltd"
-                className="mt-1 block w-full px-3.5 py-2.5 border border-[#E6E9EF] rounded-lg text-sm bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent text-[#0F172A]"
-              />
-            </div>
+            <h2 className="font-bold text-sm">Account Created Successfully</h2>
+            <p className="text-xs text-[#188A54]">
+              Redirecting you to sign in to your new workspace...
+            </p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-3.5">
+            {error && (
+              <div className="bg-[#FBECEA] border border-[#F2CBC8] text-[#C0362C] rounded-xl p-3 text-xs font-semibold">
+                {error}
+              </div>
+            )}
 
             <div>
-              <label className="block text-xs font-semibold text-[#0F172A]">Your Full Name</label>
+              <label className="block text-[12.5px] font-semibold text-[#57534E] mb-1.5">
+                Full name
+              </label>
               <input
                 type="text"
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Tariq Mahmood"
-                className="mt-1 block w-full px-3.5 py-2.5 border border-[#E6E9EF] rounded-lg text-sm bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent text-[#0F172A]"
+                placeholder="Tariq Mahmood"
+                className="w-full px-3.5 py-2.5 rounded-[11px] border border-[#E9E6DF] bg-white text-[#17161A] text-sm focus:outline-none focus:border-[#4F46E5] focus:ring-4 focus:ring-[#4F46E5]/10 transition-all font-sans"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#0F172A]">Work Email Address</label>
+              <label className="block text-[12.5px] font-semibold text-[#57534E] mb-1.5">
+                Work email
+              </label>
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="tariq@apex.pk"
-                className="mt-1 block w-full px-3.5 py-2.5 border border-[#E6E9EF] rounded-lg text-sm bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent font-mono text-[#0F172A]"
+                placeholder="tariq@meridian.pk"
+                className="w-full px-3.5 py-2.5 rounded-[11px] border border-[#E9E6DF] bg-white text-[#17161A] text-sm focus:outline-none focus:border-[#4F46E5] focus:ring-4 focus:ring-[#4F46E5]/10 transition-all font-mono"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#0F172A]">Role</label>
+              <label className="block text-[12.5px] font-semibold text-[#57534E] mb-1.5">
+                Password
+              </label>
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full px-3.5 py-2.5 rounded-[11px] border border-[#E9E6DF] bg-white text-[#17161A] text-sm focus:outline-none focus:border-[#4F46E5] focus:ring-4 focus:ring-[#4F46E5]/10 transition-all font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[12.5px] font-semibold text-[#57534E] mb-1.5">
+                Organization / Company legal name
+              </label>
+              <input
+                type="text"
+                required
+                value={orgName}
+                onChange={(e) => setOrgName(e.target.value)}
+                placeholder="Meridian Textiles (Pvt) Ltd"
+                className="w-full px-3.5 py-2.5 rounded-[11px] border border-[#E9E6DF] bg-white text-[#17161A] text-sm focus:outline-none focus:border-[#4F46E5] focus:ring-4 focus:ring-[#4F46E5]/10 transition-all font-sans"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[12.5px] font-semibold text-[#57534E] mb-1.5">
+                Primary role
+              </label>
               <select
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
-                className="mt-1 block w-full px-3 py-2.5 border border-[#E6E9EF] rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-[#2563EB] text-[#0F172A]"
+                className="w-full px-3.5 py-2.5 rounded-[11px] border border-[#E9E6DF] bg-white text-[#17161A] text-sm focus:outline-none focus:border-[#4F46E5] font-sans"
               >
-                <option value="Owner">Owner / Managing Director</option>
+                <option value="Owner">Business Owner / Director</option>
                 <option value="FinanceManager">Finance Manager</option>
-                <option value="Accountant">Accountant</option>
+                <option value="Accountant">Accountant / Bookkeeper</option>
                 <option value="CA-reviewer">Chartered Accountant (CA)</option>
               </select>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-[#0F172A]">Password</label>
-              <input
-                type="password"
-                required
-                minLength={8}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Minimum 8 characters"
-                className="mt-1 block w-full px-3.5 py-2.5 border border-[#E6E9EF] rounded-lg text-sm bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent font-mono text-[#0F172A]"
-              />
-            </div>
-
             <button
               type="submit"
-              disabled={loading || success}
-              className="w-full flex justify-center items-center gap-2 py-2.5 px-4 rounded-xl shadow-sm text-sm font-semibold text-white bg-[#2563EB] hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2563EB] disabled:opacity-50 transition-colors"
+              disabled={loading}
+              className="w-full mt-4 flex items-center justify-center gap-2 font-semibold text-[14.5px] py-3 px-4 rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] text-white shadow-[0_8px_20px_-10px_rgba(79,70,229,.6)] transition-all disabled:opacity-50 hover:-translate-y-0.5 cursor-pointer"
             >
-              {loading ? "Creating Organization..." : "Create Organization"}
-              {!loading && <ArrowRight className="w-4 h-4" />}
+              {loading ? "Creating workspace..." : "Create workspace &rarr;"}
             </button>
           </form>
+        )}
 
-          <div className="mt-6 pt-5 border-t border-[#E6E9EF] text-center">
-            <p className="text-xs text-[#64748B]">
-              Already have an account?{" "}
-              <Link href="/auth/signin" className="font-semibold text-[#2563EB] hover:underline">
-                Sign in
-              </Link>
-            </p>
-          </div>
+        <div className="text-center mt-5 text-[13px] text-[#6E6A61]">
+          Already have an account?{" "}
+          <Link href="/auth/signin" className="text-[#4F46E5] font-semibold hover:underline">
+            Sign in
+          </Link>
         </div>
       </div>
     </div>
