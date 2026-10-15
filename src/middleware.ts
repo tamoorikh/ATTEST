@@ -38,8 +38,13 @@ export default withAuth(
     callbacks: {
       authorized: ({ token, req }) => {
         const pathname = req.nextUrl.pathname;
-        // Public verification paths do not require login
-        if (pathname.startsWith("/verify") || pathname.startsWith("/api/verify")) {
+        // Public paths (landing, verification, auth) do not require login
+        if (
+          pathname === "/" ||
+          pathname.startsWith("/verify") ||
+          pathname.startsWith("/api/verify") ||
+          pathname.startsWith("/auth")
+        ) {
           return true;
         }
         // Protected paths require a valid token
@@ -56,7 +61,5 @@ export const config = {
   matcher: [
     "/portal/:path*",
     "/ca/:path*",
-    // Exclude static assets, api/auth, and public verify routes
-    "/((?!_next/static|_next/image|favicon.ico|api/auth|verify).*)",
   ],
 };
