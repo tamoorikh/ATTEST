@@ -3,9 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { appendAuditEvent } from "@/lib/audit";
+import { storage } from "@/lib/storage";
 import { createHash } from "crypto";
-import fs from "fs";
-import path from "path";
 
 export async function POST(
   req: Request,
@@ -77,16 +76,19 @@ export async function POST(
       const ev = body.evidence;
 
       if (ev.type === "UPLOAD" && ev.filename && ev.content) {
-        // Vault file upload
+        // Vault file upload via unified storage adapter
         const buffer = Buffer.from(ev.content, "base64");
         const sha256 = createHash("sha256").update(buffer).digest("hex");
+        const mimeType = ev.mime || "application/pdf";
 
-        const uploadsDir = path.join(process.cwd(), "uploads", "evidence");
-        if (!fs.existsSync(uploadsDir)) {
-          fs.mkdirSync(uploadsDir, { recursive: true });
-        }
-        const storagePath = path.join("uploads", "evidence", `${Date.now()}-${ev.filename}`);
-        fs.writeFileSync(path.join(process.cwd(), storagePath), buffer);
+        const uploadResult = await storage.uploadFile({
+          orgId,
+          filename: ev.filename,
+          buffer,
+          mimeType,
+          sha256,
+          bucketName: "evidence",
+        });
 
         // Store in SourceDocument vault
         const sourceDoc = await prisma.sourceDocument.create({
@@ -96,12 +98,12 @@ export async function POST(
             type: "EVIDENCE_ATTACHMENT",
             period: exception.period,
             sha256,
-            mime: ev.mime || "application/pdf",
+            mime: mimeType,
             size: buffer.length,
             parseStatus: "PARSED",
             tier: "CORROBORATING",
             uploadedById: userId,
-            storagePath,
+            storagePath: uploadResult.storagePath,
           },
         });
 

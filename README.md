@@ -35,35 +35,110 @@ npm install
 # Copy the example environment file or configure .env as below:
 ```
 
-Create a `.env` file in the repository root:
+Create a `.env` file in the repository root (see `.env.example` for the complete dual-environment template):
 ```env
-DATABASE_URL="file:./dev.db"
-AUTH_SECRET="attest-development-secret-key-32-chars-long-minimum"
-NEXTAUTH_SECRET="attest-development-secret-key-32-chars-long-minimum"
-NEXTAUTH_URL="http://localhost:3001"
-SIGNING_KEY="attest-dev-secret-signing-key-2026"
+# Production Supabase PostgreSQL (or local SQLite file:./dev.db for local dev)
+DATABASE_URL="postgresql://postgres.[PROD_REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1"
+DIRECT_URL="postgresql://postgres.[PROD_REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:5432/postgres"
+
+# NextAuth.js
+NEXTAUTH_URL="https://attest.pk"
+NEXTAUTH_SECRET="your-32-character-production-secret-goes-here"
+
+# Supabase Storage & API
+SUPABASE_URL="https://[PROD_REF].supabase.co"
+SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+STORAGE_PROVIDER="supabase"
+SUPABASE_STORAGE_BUCKET="evidence"
+
+# Production Safeguards (CRITICAL)
+DEMO_MODE="false"
+NEXT_PUBLIC_DEMO_MODE="false"
+SEED_DEMO_DATA="false"
+
+# Cryptographic Certificate Signing
+SIGNING_KEY="your-production-hmac-sha256-signing-key-32-bytes"
 SIGNING_MODE="DEVELOPMENT"
-DEMO_MODE="true"
-NEXT_PUBLIC_DEMO_MODE="true"
 ```
 
 ```bash
-# 4. Push database schema & generate Prisma client
-npm run db:push
-npm run db:generate
+# 4. Push database schema to Supabase Postgres (Prisma generates all DDL)
+npx prisma db push
+npx prisma generate
 
-# 5. Seed the demonstration dataset (Meridian Textiles, rescaled x10 figures)
-npm run db:seed
+# 5. Pre-Launch Verification Check
+npx tsx scripts/self-check.ts
 
-# 6. Start the local development server (running on port 3001)
-npm run dev
+# 6. Authentication & Database Smoke Test
+npx tsx scripts/smoke-auth.ts
+
+# 7. Start the server (runs on port 3001)
+npm run build
+npm start
 ```
+
+---
+
+## 2. Two-Environment Architecture (Production vs. Staging)
+
+Attest strictly isolates real client production data from demonstration datasets:
+
+| Environment | Database Target | Storage | Demo Affordances | Seeding Policy |
+| :--- | :--- | :--- | :--- | :--- |
+| **PRODUCTION** | Clean Supabase Project (`attest-production`) | Supabase Private Bucket `"evidence"` | **DISABLED** (`DEMO_MODE=false`) | **STRICTLY FORBIDDEN** (`SEED_DEMO_DATA=false`). Script hard-refuses. |
+| **STAGING / DEMO** | Demo Supabase Project (`attest-staging-demo`) or local SQLite | Supabase Bucket or Local Storage | **ENABLED** (DEMONSTRATION DATA ribbon, quick-logins) | Explicit flag required: `SEED_DEMO_DATA=true npx prisma db seed` |
+
+### Guarded Seeding Protocol
+To ensure fictional data is never accidentally injected into production:
+1. `prisma/seed.ts` contains a top-level runtime guard that strictly checks `process.env.SEED_DEMO_DATA === "true"`.
+2. Running `npx prisma db seed` without the flag **hard-aborts** with code 1 and writes zero records.
+3. Seeding staging requires:
+   ```bash
+   SEED_DEMO_DATA=true npx prisma db seed
+   ```
+
+---
+
+## 3. Production Storage Bucket Setup (Supabase Console)
+
+All supporting evidence and source documents are stored in a private Supabase Storage bucket. Follow these steps in the Supabase Console:
+
+1. Open the [Supabase Dashboard](https://supabase.com/dashboard) and select your **Production** project.
+2. In the left navigation menu, click **Storage**.
+3. Click the **New bucket** button.
+4. In the configuration dialog:
+   - **Name**: `evidence`
+   - **Public bucket**: **OFF** (Keep unchecked — files must remain strictly private).
+   - **File size limit**: `25MB`.
+   - **Allowed MIME types**: `application/pdf`, `text/csv`, `text/plain`, `image/png`, `image/jpeg`.
+5. Click **Save bucket**.
+
+> **Automatic Self-Provisioning**:
+> The Attest storage adapter (`src/lib/storage.ts`) also performs an automatic existence check on startup. If the `"evidence"` bucket does not exist, it will auto-create it as private server-side using your `SUPABASE_SERVICE_ROLE_KEY`.
+
+---
+
+## 4. Production Deployment Checklist
+
+Before going live in production, verify each of the following:
+
+- [ ] **Database Connection**: `DATABASE_URL` points to clean Supabase production project (port 6543 pooled, port 5432 direct for migrations).
+- [ ] **Prisma DDL Applied**: Run `npx prisma db push` to generate all tables. Never hand-write SQL.
+- [ ] **Production Cleanliness**: Confirm database contains 0 demo rows (`npx tsx scripts/self-check.ts`).
+- [ ] **Storage Bucket**: Confirm `"evidence"` bucket is created and private.
+- [ ] **NextAuth Secrets**: `NEXTAUTH_SECRET` is at least 32 cryptographically random characters.
+- [ ] **Canonical URL**: `NEXTAUTH_URL` matches your production domain (e.g., `https://attest.pk`).
+- [ ] **Safeguards Active**: `DEMO_MODE=false`, `NEXT_PUBLIC_DEMO_MODE=false`, and `SEED_DEMO_DATA=false`.
+- [ ] **Signing Transparency**: `SIGNING_MODE=DEVELOPMENT` is displayed with honest disclosure: *"development-mode integrity — not a qualified digital signature"*.
+- [ ] **Point-In-Time Recovery (PITR)**: Enable automated daily backups and WAL archiving in Supabase Project Settings &rarr; Database &rarr; Backups.
+- [ ] **Smoke Test Verified**: Run `npx tsx scripts/smoke-auth.ts` and confirm all 5 checks pass.
 
 Open your browser to: **[http://localhost:3001](http://localhost:3001)**
 
 ---
 
-## 2. Demo Credentials & 8-Step Walkthrough
+## 5. Demo Credentials & 8-Step Walkthrough
 
 Attest includes pre-seeded demonstration personas for **Meridian Textiles (Pvt) Ltd** (a synthetic Pakistani textile exporter).
 
@@ -99,7 +174,7 @@ Attest includes pre-seeded demonstration personas for **Meridian Textiles (Pvt) 
 
 ---
 
-## 3. Honest Limitations & Architectural Boundaries
+## 6. Honest Limitations & Architectural Boundaries
 
 In accordance with Section 4 of `ATTEST.md`, Attest is built on radical transparency:
 
@@ -107,14 +182,14 @@ In accordance with Section 4 of `ATTEST.md`, Attest is built on radical transpar
 2. **No Bank API Integrations (Client-Provided Statements)**: Attest does not integrate with Pakistani bank open banking APIs (which do not exist publicly). Bank statements are uploaded by the client. Cryptographic SHA-256 hashes prove **integrity-since-upload**, *not* original institutional authenticity.
 3. **Single-Currency Enforcement**: All operations within an engagement must share one currency (`PKR`). Cross-currency conversions are strictly blocked to eliminate floating-point currency translation inaccuracies.
 4. **Development-Mode Signatures**: In development mode, certificates are signed using HMAC-SHA256 with server-side keys. These are transparently labeled as `"development-mode integrity — not a qualified digital signature"`.
-5. **SQLite Single-Server Architecture**: The MVP uses SQLite via Prisma for zero-setup, self-contained local demonstration. Enterprise production deployments migrate to PostgreSQL via standard Prisma datasource configuration.
+5. **Database Architecture**: SQLite via Prisma is supported for zero-setup, self-contained local development/testing. Production runs on Supabase PostgreSQL with pooled connections.
 6. **Certificate ID Enumeration Defense**: Public certificate IDs follow the format `ATTEST-PK-2026-[6-digit-code]-[2-char-suffix]`. The public verifier route `/verify/[id]` enforces an IP-based rate limit of 10 requests per minute with generic responses for unknown IDs to mitigate brute-force enumeration.
 7. **Pakistan-Specific Metadata Labeling**: SECP company registration numbers and FBR National Tax Numbers (NTN) collected during onboarding are explicitly labeled in the UI and certificate metadata as: *"user-provided — not independently verified"*.
 8. **In-App Notifications Only**: Real-time notifications and alerts are delivered through the in-app Notification Center. External delivery via SMTP email or WhatsApp Business API is deferred to post-MVP roadmap.
 
 ---
 
-## 4. Test Suite, Build & Security Verification
+## 7. Test Suite, Build & Security Verification
 
 Attest maintains 100% passing automated test coverage across 9 test suites:
 
@@ -194,7 +269,7 @@ Duration:    ~8.5s
 
 ---
 
-## 5. Master Implementation Status Table
+## 8. Master Implementation Status Table
 
 | Spec Dimension | Status | Implementation Details | Test Proof & Reference |
 | :--- | :--- | :--- | :--- |

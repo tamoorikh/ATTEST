@@ -7,8 +7,8 @@ import { parseBankStatementCsv } from "@/lib/parser/csv";
 import { parseBankStatementPdf } from "@/lib/parser/pdf";
 import { validateAndNormalizeBankStatement } from "@/lib/validator/rules";
 import { parseToPaise } from "@/lib/money";
+import { storage } from "@/lib/storage";
 import { createHash } from "crypto";
-import fs from "fs";
 import path from "path";
 
 const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15MB
@@ -74,16 +74,15 @@ export async function POST(req: Request) {
       );
     }
 
-    // Save to private local storage directory under /storage/[orgId]/
-    const storageDir = path.join(process.cwd(), "storage", orgId);
-    if (!fs.existsSync(storageDir)) {
-      fs.mkdirSync(storageDir, { recursive: true });
-    }
-
-    const sanitizedFilename = filename.replace(/[^a-zA-Z0-9_\-\.]/g, "_");
-    const storageFilename = `${sha256}_${sanitizedFilename}`;
-    const storagePath = path.join(storageDir, storageFilename);
-    fs.writeFileSync(storagePath, buffer);
+    // Persist file via unified storage adapter (Supabase private bucket or local fallback)
+    const mimeType = file.type || (ext === ".csv" ? "text/csv" : "application/pdf");
+    const uploadResult = await storage.uploadFile({
+      orgId,
+      filename,
+      buffer,
+      mimeType,
+      sha256,
+    });
 
     // Create SourceDocument row in database
     const doc = await prisma.sourceDocument.create({
@@ -93,12 +92,12 @@ export async function POST(req: Request) {
         type,
         period,
         sha256,
-        mime: file.type || (ext === ".csv" ? "text/csv" : "application/pdf"),
+        mime: mimeType,
         size: file.size,
         parseStatus: "PENDING",
         tier,
         uploadedById: actorId,
-        storagePath: path.relative(process.cwd(), storagePath),
+        storagePath: uploadResult.storagePath,
       },
     });
 
